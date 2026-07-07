@@ -1,0 +1,27 @@
+
+AUMATIQ_NABS&FBK_HomeOS
+
+[SPREADSHEET_ID]
+1RLoBAewJ6GbgAm_NpF9i4ZDD3LKFsqVlbintntWgwaM
+
+[Web App URL]
+📌 NABS&FBK HomeOS (share করুন — সবার জন্য):
+https://script.google.com/macros/s/AKfycbyeB7-bvniICjoB2Y5yosCwurBjMTK-FA2WArKbJ3U3PF_O1qBXDCO1hmQA0QIg0BPj8Q/exec
+
+📌 APPS SCRIPT EDITOR (code edit):
+https://script.google.com/u/0/home/projects/1oC2PWR0s44Q9MSPKJLy1iowK1Viq4feLnNte7Yhqqf03OK76FgZB31sx/edit
+
+📌 GOOGLE DRIVE (test files):
+https://drive.google.com/drive/u/0/folders/1_wGbs0aMfmxEKgU6ev9mXgmchZe_9z_x
+
+📌 Default Password (Settings ট্যাব থেকে যেকোনো সময় পরিবর্তন করতে পারবে):
+App Lock: NABSFBK2025
+Settings/Admin: ADMIN2025
+
+
+[Web App URL]
+https://nfhos.netlify.app/
+
+
+
+
