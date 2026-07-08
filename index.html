@@ -2673,6 +2673,7 @@ async function confirmAndSaveEntry() {
   renderRecentEntries();
   renderDashboard();
   syncEntryToSheets(entry);
+  if (driveFileId) pushDataToBackend(); // also syncs the auto-created Documents record
   checkBudgetAlert();
 }
 
@@ -2725,6 +2726,7 @@ function deleteEntry(id) {
   secureConfirm('এই এন্ট্রিটি মুছবেন?', ()=>{
     APP_DATA.entries = APP_DATA.entries.filter(e=>e.id!==id);
     saveData(); renderRecentEntries(); renderFinance(); renderDashboard();
+    pushDataToBackend();
     toast('Entry মুছে গেছে','warning');
   });
 }
@@ -3007,13 +3009,13 @@ async function saveProject() {
   };
   if (editingProjectId) { const i=APP_DATA.projects.findIndex(p=>p.id===editingProjectId); if(i>-1) APP_DATA.projects[i]=proj; }
   else APP_DATA.projects.unshift(proj);
-  saveData(); closeModal('projectModal'); renderProjects(); toast('Project সংরক্ষণ হয়েছে!');
+  saveData(); closeModal('projectModal'); renderProjects(); pushDataToBackend(); toast('Project সংরক্ষণ হয়েছে!');
 }
 
 function deleteProject(id) {
   secureConfirm('এই project মুছবেন?', ()=>{
     APP_DATA.projects=APP_DATA.projects.filter(p=>p.id!==id);
-    saveData(); renderProjects(); toast('Project মুছে গেছে','warning');
+    saveData(); renderProjects(); pushDataToBackend(); toast('Project মুছে গেছে','warning');
   });
 }
 
@@ -3041,7 +3043,7 @@ function saveCost() {
     if (!proj.costs) proj.costs=[];
     proj.costs.push({id:uid(), name, amount, date, linkedEntryId: entry.id});
     proj.actualCost=proj.costs.reduce((s,c)=>s+c.amount,0);
-    saveData(); renderProjects();
+    saveData(); renderProjects(); pushDataToBackend();
     toast('খরচ প্রজেক্টে ও Finance-এ যোগ হয়েছে! ✅');
   });
 }
@@ -3055,7 +3057,7 @@ function deleteCost(projId,costId) {
     }
     proj.costs=proj.costs.filter(c=>c.id!==costId);
     proj.actualCost=proj.costs.reduce((s,c)=>s+c.amount,0);
-    saveData(); renderProjects(); renderRecentEntries(); renderDashboard(); toast('খরচ মুছে গেছে','warning');
+    saveData(); renderProjects(); renderRecentEntries(); renderDashboard(); pushDataToBackend(); toast('খরচ মুছে গেছে','warning');
   });
 }
 
@@ -3179,17 +3181,17 @@ async function saveTask() {
     createdAt:new Date().toISOString()};
   if(editingTaskId){const i=APP_DATA.tasks.findIndex(t=>t.id===editingTaskId);if(i>-1)APP_DATA.tasks[i]=task;}
   else APP_DATA.tasks.unshift(task);
-  saveData(); closeModal('taskModal'); renderTasks(); toast('Task সংরক্ষণ হয়েছে!');
+  saveData(); closeModal('taskModal'); renderTasks(); pushDataToBackend(); toast('Task সংরক্ষণ হয়েছে!');
 }
 
 function toggleTask(id) {
-  const t=APP_DATA.tasks.find(x=>x.id===id); if(t){t.done=!t.done;saveData();renderTasks();renderDashboard();}
+  const t=APP_DATA.tasks.find(x=>x.id===id); if(t){t.done=!t.done;saveData();renderTasks();renderDashboard();pushDataToBackend();}
 }
 
 function deleteTask(id) {
   secureConfirm('এই task মুছবেন?',()=>{
     APP_DATA.tasks=APP_DATA.tasks.filter(t=>t.id!==id);
-    saveData();renderTasks();renderDashboard();toast('Task মুছে গেছে','warning');
+    saveData();renderTasks();renderDashboard();pushDataToBackend();toast('Task মুছে গেছে','warning');
   });
 }
 
@@ -3254,13 +3256,13 @@ async function saveShopItem() {
     driveFileName: driveFileName || existing?.driveFileName || null};
   if(editingShopId){const i=APP_DATA.shopping.findIndex(s=>s.id===editingShopId);if(i>-1)APP_DATA.shopping[i]=item;}
   else APP_DATA.shopping.unshift(item);
-  editingShopId=null; saveData(); closeModal('shopModal'); renderShopping(); toast('Item যোগ হয়েছে!');
+  editingShopId=null; saveData(); closeModal('shopModal'); renderShopping(); pushDataToBackend(); toast('Item যোগ হয়েছে!');
 }
 
 function toggleBought(id) {
   const s=APP_DATA.shopping.find(x=>x.id===id); if(!s) return;
   s.bought=!s.bought;
-  saveData(); renderShopping();
+  saveData(); renderShopping(); pushDataToBackend();
   // First time an item with a price is marked bought, offer to log it as
   // a Finance expense too (guarded by expensedEntryId so it never double-counts).
   if (s.bought && s.price > 0 && !s.expensedEntryId) {
@@ -3271,7 +3273,7 @@ function toggleBought(id) {
       note: `🛒 কেনাকাটা — ${s.name}${s.qty ? ' ('+s.qty+')' : ''}`
     }, (entry) => {
       s.expensedEntryId = entry.id;
-      saveData(); renderShopping();
+      saveData(); renderShopping(); pushDataToBackend();
     });
   }
 }
@@ -3281,7 +3283,7 @@ function deleteShopItem(id) {
     const s = APP_DATA.shopping.find(x=>x.id===id);
     if (s && s.expensedEntryId) APP_DATA.entries = APP_DATA.entries.filter(e=>e.id!==s.expensedEntryId);
     APP_DATA.shopping=APP_DATA.shopping.filter(s=>s.id!==id);
-    saveData();renderShopping();renderDashboard();renderRecentEntries();toast('Item মুছে গেছে','warning');
+    saveData();renderShopping();renderDashboard();renderRecentEntries();pushDataToBackend();toast('Item মুছে গেছে','warning');
   });
 }
 
@@ -3438,13 +3440,13 @@ async function saveDoc() {
   if(editingDocId){const i=APP_DATA.docs.findIndex(d=>d.id===editingDocId);if(i>-1)APP_DATA.docs[i]=doc;}
   else APP_DATA.docs.unshift(doc);
   editingDocId=null; docFileToUpload=null;
-  saveData(); closeModal('docModal'); renderDocs(); toast('Document সংরক্ষণ হয়েছে!');
+  saveData(); closeModal('docModal'); renderDocs(); pushDataToBackend(); toast('Document সংরক্ষণ হয়েছে!');
 }
 
 function deleteDoc(id) {
   secureConfirm('এই document মুছবেন?',()=>{
     APP_DATA.docs=APP_DATA.docs.filter(d=>d.id!==id);
-    saveData();renderDocs();toast('Document মুছে গেছে','warning');
+    saveData();renderDocs();pushDataToBackend();toast('Document মুছে গেছে','warning');
   });
 }
 
@@ -3827,18 +3829,46 @@ function clearAllData() {
 }
 
 // ──────────────────────────────────────────
-// GOOGLE SHEETS SYNC
+// GOOGLE SHEETS SYNC (push local → Sheet, then pull canonical → local)
 // ──────────────────────────────────────────
+/** Silent, fire-and-forget push of current local data to the Sheet.
+ *  Used after deletions so a removed item doesn't get resurrected by
+ *  a future pullDataFromBackend() (which otherwise wouldn't know it
+ *  was deleted, since the Sheet would still have the old row). */
+function pushDataToBackend() {
+  if (!CONFIG.webAppUrl) return;
+  fetch(`${CONFIG.webAppUrl}?action=sync`,{
+    method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({
+      entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
+      shopping:APP_DATA.shopping, docs:APP_DATA.docs
+    })
+  }).catch(()=>{});
+}
+
 function syncNow() {
   const btn=document.getElementById('syncBtn'); btn.classList.add('spinning');
   if(!CONFIG.webAppUrl){setTimeout(()=>btn.classList.remove('spinning'),800);toast('Settings-এ Apps Script URL দিন','warning');return;}
   fetch(`${CONFIG.webAppUrl}?action=sync`,{
     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify({entries:APP_DATA.entries.slice(0,100),projects:APP_DATA.projects,tasks:APP_DATA.tasks})
+    body:JSON.stringify({
+      entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
+      shopping:APP_DATA.shopping, docs:APP_DATA.docs
+    })
   }).then(r=>r.json()).then(d=>{
-    btn.classList.remove('spinning');
-    d.status==='ok'?toast('Google Sheets sync সফল! ✅'):toast('Sync-এ সমস্যা','error');
-  }).catch(()=>{btn.classList.remove('spinning');toast('Sync ব্যর্থ','error');});
+    if (d.status==='ok') {
+      // After pushing, pull back the canonical Sheet data — this also
+      // catches anything changed directly in the Sheet itself (e.g. a
+      // manual edit/import done outside the app).
+      pullDataFromBackend(() => {
+        btn.classList.remove('spinning');
+        toast('Google Sheets sync সফল! ✅ সব ডিভাইসে আপডেট হয়েছে');
+      });
+    } else {
+      btn.classList.remove('spinning');
+      toast('Sync-এ সমস্যা','error');
+    }
+  }).catch(()=>{btn.classList.remove('spinning');toast('Sync ব্যর্থ — ইন্টারনেট চেক করুন','error');});
 }
 
 function syncEntryToSheets(entry) {
@@ -3846,6 +3876,39 @@ function syncEntryToSheets(entry) {
   fetch(`${CONFIG.webAppUrl}?action=addEntry`,{
     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(entry)
   }).catch(()=>{});
+}
+
+// ──────────────────────────────────────────
+// PULL LATEST DATA FROM BACKEND (Sheet → this device)
+// Called automatically every time the app opens/unlocks, so every
+// device (desktop or mobile) always shows what's actually in the
+// Google Sheet — instead of only ever seeing its own old local copy.
+// This is the fix for: "changed data on one device/directly in the
+// Sheet, but another device still shows the old data."
+// ──────────────────────────────────────────
+function pullDataFromBackend(onDone) {
+  if (!CONFIG.webAppUrl) { if (typeof onDone==='function') onDone(); return; }
+  fetch(`${CONFIG.webAppUrl}?action=pullData`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        if (Array.isArray(d.entries))  APP_DATA.entries  = d.entries;
+        if (Array.isArray(d.projects)) APP_DATA.projects = d.projects;
+        if (Array.isArray(d.tasks))    APP_DATA.tasks    = d.tasks;
+        if (Array.isArray(d.shopping)) APP_DATA.shopping = d.shopping;
+        if (Array.isArray(d.docs))     APP_DATA.docs     = d.docs;
+        saveData();
+        // Re-render whatever might currently be visible
+        renderDashboard(); renderRecentEntries();
+        if (typeof renderProjects === 'function') renderProjects();
+        if (typeof renderTasks === 'function') renderTasks();
+        if (typeof renderShopping === 'function') renderShopping();
+        if (typeof renderDocs === 'function') renderDocs();
+        if (typeof renderHistory === 'function' && document.getElementById('tab-history')?.classList.contains('active')) renderHistory();
+      }
+      if (typeof onDone === 'function') onDone();
+    })
+    .catch(() => { if (typeof onDone === 'function') onDone(); });
 }
 
 // ──────────────────────────────────────────
@@ -3870,6 +3933,10 @@ function initApp() {
   renderRecentEntries();
   // Pull latest password hashes + budget goals from backend (cross-device sync)
   loadSettingsFromBackend();
+  // Pull latest entries/projects/tasks/shopping/docs from the Sheet —
+  // this is what keeps every device (desktop, mobile app, mobile browser)
+  // showing the same up-to-date data instead of a stale local copy.
+  pullDataFromBackend();
   // Start the auto-logout countdown for this login
   armSessionTimeout();
 }

@@ -39,6 +39,7 @@ function doGet(e) {
     if (action === 'ping')        return jsonResp({ status: 'ok', ts: new Date().toISOString() });
     if (action === 'verifyPass')  return handleVerifyPass(e);
     if (action === 'getSettings') return handleGetSettings();
+    if (action === 'pullData')    return handlePullData();
     if (action === 'sync')        return jsonResp({ status: 'ok', msg: 'Use POST for sync' });
     return jsonResp({ status: 'error', msg: 'Unknown GET action: ' + action });
   } catch(err) {
@@ -232,51 +233,112 @@ function buildOTPEmailHTML(otp, type) {
 // ══════════════════════════════════════════════════════════
 function handleAddEntry(body) {
   const ss    = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-  const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, [
-    'ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt'
-  ]);
+  const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName'];
+  const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
+  ensureHeaders(sheet, headers);
   sheet.appendRow([
     body.id || '', body.date || '', body.type || '', body.category || '',
     parseFloat(body.amount) || 0, body.member || '', body.payment || '',
-    body.note || '', body.createdAt || new Date().toISOString()
+    body.note || '', body.createdAt || new Date().toISOString(),
+    body.driveFileId || '', body.driveFileName || ''
   ]);
   return jsonResp({ status: 'ok', id: body.id });
 }
 
+/**
+ * Extends a sheet's header row with any missing columns from `headers`,
+ * WITHOUT touching existing columns/data. Safe to call every time —
+ * this is what lets older sheets (created before a field was added)
+ * upgrade automatically instead of silently losing new columns.
+ */
+function ensureHeaders(sheet, headers) {
+  const currentLastCol = sheet.getLastColumn();
+  if (currentLastCol < headers.length) {
+    sheet.getRange(1, currentLastCol + 1, 1, headers.length - currentLastCol)
+         .setValues([headers.slice(currentLastCol)])
+         .setFontWeight('bold').setBackground('#0D1117').setFontColor('#F5A623');
+  }
+}
+
+/** Clears all data rows (keeps header) then writes fresh rows. */
+function writeRows(sheet, rows, numCols) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, Math.max(sheet.getLastColumn(), numCols)).clearContent();
+  if (rows.length) sheet.getRange(2, 1, rows.length, numCols).setValues(rows);
+}
+
+function formatDateVal(v) {
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') return Utilities.formatDate(v, CONFIG.TIMEZONE, 'yyyy-MM-dd');
+  return String(v);
+}
+
 // ══════════════════════════════════════════════════════════
-// FULL SYNC — Bulk write all data to sheets
+// FULL SYNC — Bulk write all data to sheets (push: device → Sheet)
 // ══════════════════════════════════════════════════════════
 function handleSync(body) {
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
 
-  // Sync entries
-  if (body.entries && body.entries.length) {
-    const eSheet = getOrCreateSheet(ss, SHEETS.ENTRIES, [
-      'ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt'
-    ]);
-    // Clear existing data (keep header)
-    const lastRow = eSheet.getLastRow();
-    if (lastRow > 1) eSheet.getRange(2, 1, lastRow - 1, eSheet.getLastColumn()).clearContent();
-    const rows = body.entries.map(e => [
-      e.id||'', e.date||'', e.type||'', e.category||'',
-      parseFloat(e.amount)||0, e.member||'', e.payment||'', e.note||'', e.createdAt||''
-    ]);
-    eSheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  if (body.entries) {
+    const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName'];
+    const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.entries.map(e => [
+      e.id||'', e.date||'', e.type||'', e.category||'', parseFloat(e.amount)||0,
+      e.member||'', e.payment||'', e.note||'', e.createdAt||'',
+      e.driveFileId||'', e.driveFileName||''
+    ]), headers.length);
   }
 
-  // Sync projects
-  if (body.projects && body.projects.length) {
-    const pSheet = getOrCreateSheet(ss, SHEETS.PROJECTS, [
-      'ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt'
-    ]);
-    const lastRow = pSheet.getLastRow();
-    if (lastRow > 1) pSheet.getRange(2, 1, lastRow - 1, pSheet.getLastColumn()).clearContent();
-    const rows = body.projects.map(p => [
-      p.id||'', p.name||'', p.category||'', p.status||'',
-      p.startDate||'', p.endDate||'', p.budget||0, p.actualCost||0,
-      p.priority||'medium', p.notes||'', p.createdAt||''
-    ]);
-    pSheet.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  if (body.projects) {
+    const headers = ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt','DriveFileId','DriveFileName'];
+    const sheet = getOrCreateSheet(ss, SHEETS.PROJECTS, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.projects.map(p => [
+      p.id||'', p.name||'', p.category||'', p.status||'', p.startDate||'', p.endDate||'',
+      p.budget||0, p.actualCost||0, p.priority||'medium', p.notes||'', p.createdAt||'',
+      p.driveFileId||'', p.driveFileName||''
+    ]), headers.length);
+
+    // Flatten each project's costs[] into the ProjectCosts sheet
+    const costHeaders = ['ID','ProjectID','Name','Amount','Date','LinkedEntryId'];
+    const costSheet = getOrCreateSheet(ss, SHEETS.COSTS, costHeaders);
+    ensureHeaders(costSheet, costHeaders);
+    const costRows = [];
+    body.projects.forEach(p => (p.costs||[]).forEach(c => {
+      costRows.push([c.id||'', p.id||'', c.name||'', c.amount||0, c.date||'', c.linkedEntryId||'']);
+    }));
+    writeRows(costSheet, costRows, costHeaders.length);
+  }
+
+  if (body.tasks) {
+    const headers = ['ID','Text','Due','Priority','Member','Category','Done','Notes','CreatedAt','DriveFileId','DriveFileName'];
+    const sheet = getOrCreateSheet(ss, SHEETS.TASKS, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.tasks.map(t => [
+      t.id||'', t.text||'', t.due||'', t.priority||'medium', t.member||'', t.category||'',
+      t.done?1:0, t.notes||'', t.createdAt||'', t.driveFileId||'', t.driveFileName||''
+    ]), headers.length);
+  }
+
+  if (body.shopping) {
+    const headers = ['ID','Name','Qty','Price','Category','List','Bought','Note','ExpensedEntryId','DriveFileId','DriveFileName'];
+    const sheet = getOrCreateSheet(ss, SHEETS.SHOPPING, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.shopping.map(s => [
+      s.id||'', s.name||'', s.qty||'', s.price||0, s.category||'', s.list||'',
+      s.bought?1:0, s.note||'', s.expensedEntryId||'', s.driveFileId||'', s.driveFileName||''
+    ]), headers.length);
+  }
+
+  if (body.docs) {
+    const headers = ['ID','Title','Category','Type','Tags','Content','DriveFileId','DriveFileName','UpdatedAt'];
+    const sheet = getOrCreateSheet(ss, SHEETS.DOCS, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.docs.map(d => [
+      d.id||'', d.title||'', d.category||'', d.type||'', (d.tags||[]).join(','), d.content||'',
+      d.driveFileId||'', d.driveFileName||'', d.updatedAt||''
+    ]), headers.length);
   }
 
   // Log sync
@@ -284,6 +346,78 @@ function handleSync(body) {
   logSheet.appendRow([new Date(), (body.entries||[]).length, 'ok']);
 
   return jsonResp({ status: 'ok', synced: new Date().toISOString() });
+}
+
+// ══════════════════════════════════════════════════════════
+// FULL PULL — Read all data back from Sheets (pull: Sheet → device)
+// This is what makes cross-device sync actually work: every device
+// calls this on load and adopts the Sheet's data as canonical, so a
+// change made on one device (or directly in the Sheet) reaches every
+// other device instead of staying stuck in that one browser's storage.
+// ══════════════════════════════════════════════════════════
+function handlePullData() {
+  const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+
+  function readSheet(name, headers) {
+    const sheet = getOrCreateSheet(ss, name, headers);
+    ensureHeaders(sheet, headers);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
+    const data = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    return data.filter(row => row[0] !== '' && row[0] !== null).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+  }
+
+  const entryHeaders = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName'];
+  const entries = readSheet(SHEETS.ENTRIES, entryHeaders).map(r => ({
+    id:String(r.ID), date:formatDateVal(r.Date), type:r.Type, category:r.Category, amount:Number(r.Amount)||0,
+    member:r.Member, payment:r.PaymentMethod, note:r.Note,
+    createdAt:r.CreatedAt ? new Date(r.CreatedAt).toISOString() : '',
+    driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null
+  }));
+
+  const projectHeaders = ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt','DriveFileId','DriveFileName'];
+  const costHeaders    = ['ID','ProjectID','Name','Amount','Date','LinkedEntryId'];
+  const costRows = readSheet(SHEETS.COSTS, costHeaders);
+  const projects = readSheet(SHEETS.PROJECTS, projectHeaders).map(r => ({
+    id:String(r.ID), name:r.Name, category:r.Category, status:r.Status,
+    startDate:formatDateVal(r.StartDate), endDate:formatDateVal(r.EndDate),
+    budget:Number(r.Budget)||0, actualCost:Number(r.ActualCost)||0, priority:r.Priority||'medium',
+    notes:r.Notes, createdAt:r.CreatedAt ? new Date(r.CreatedAt).toISOString() : '',
+    driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null,
+    costs: costRows.filter(c => String(c.ProjectID) === String(r.ID)).map(c => ({
+      id:String(c.ID), name:c.Name, amount:Number(c.Amount)||0, date:formatDateVal(c.Date),
+      linkedEntryId: c.LinkedEntryId || null
+    }))
+  }));
+
+  const taskHeaders = ['ID','Text','Due','Priority','Member','Category','Done','Notes','CreatedAt','DriveFileId','DriveFileName'];
+  const tasks = readSheet(SHEETS.TASKS, taskHeaders).map(r => ({
+    id:String(r.ID), text:r.Text, due:formatDateVal(r.Due), priority:r.Priority||'medium',
+    member:r.Member, category:r.Category, done: r.Done===true||r.Done===1||r.Done==='1',
+    notes:r.Notes, createdAt:r.CreatedAt ? new Date(r.CreatedAt).toISOString() : '',
+    driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null
+  }));
+
+  const shopHeaders = ['ID','Name','Qty','Price','Category','List','Bought','Note','ExpensedEntryId','DriveFileId','DriveFileName'];
+  const shopping = readSheet(SHEETS.SHOPPING, shopHeaders).map(r => ({
+    id:String(r.ID), name:r.Name, qty:r.Qty, price:Number(r.Price)||0, category:r.Category,
+    list:r.List, bought: r.Bought===true||r.Bought===1||r.Bought==='1', note:r.Note,
+    expensedEntryId:r.ExpensedEntryId||null, driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null
+  }));
+
+  const docHeaders = ['ID','Title','Category','Type','Tags','Content','DriveFileId','DriveFileName','UpdatedAt'];
+  const docs = readSheet(SHEETS.DOCS, docHeaders).map(r => ({
+    id:String(r.ID), title:r.Title, category:r.Category, type:r.Type,
+    tags: r.Tags ? String(r.Tags).split(',').filter(Boolean) : [],
+    content:r.Content, driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null,
+    updatedAt:r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : ''
+  }));
+
+  return jsonResp({ status:'ok', entries, projects, tasks, shopping, docs, pulledAt: new Date().toISOString() });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -603,11 +737,11 @@ function hashPass(str) {
 function setup() {
   // 1. Create all sheets
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-  getOrCreateSheet(ss, SHEETS.ENTRIES,   ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt']);
-  getOrCreateSheet(ss, SHEETS.PROJECTS,  ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt']);
-  getOrCreateSheet(ss, SHEETS.COSTS,     ['ID','ProjectID','Name','Amount','Date']);
-  getOrCreateSheet(ss, SHEETS.TASKS,     ['ID','Text','Due','Priority','Member','Category','Done','Notes','CreatedAt']);
-  getOrCreateSheet(ss, SHEETS.SHOPPING,  ['ID','Name','Qty','Price','Category','List','Bought','Note']);
+  getOrCreateSheet(ss, SHEETS.ENTRIES,   ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName']);
+  getOrCreateSheet(ss, SHEETS.PROJECTS,  ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt','DriveFileId','DriveFileName']);
+  getOrCreateSheet(ss, SHEETS.COSTS,     ['ID','ProjectID','Name','Amount','Date','LinkedEntryId']);
+  getOrCreateSheet(ss, SHEETS.TASKS,     ['ID','Text','Due','Priority','Member','Category','Done','Notes','CreatedAt','DriveFileId','DriveFileName']);
+  getOrCreateSheet(ss, SHEETS.SHOPPING,  ['ID','Name','Qty','Price','Category','List','Bought','Note','ExpensedEntryId','DriveFileId','DriveFileName']);
   getOrCreateSheet(ss, SHEETS.DOCS,      ['ID','Title','Category','Type','Tags','Content','DriveFileId','DriveFileName','UpdatedAt']);
   getOrCreateSheet(ss, SHEETS.SETTINGS,  ['Key','Value','UpdatedAt']);
   getOrCreateSheet(ss, SHEETS.OTP_LOG,   ['Timestamp','Email','OTP','Type','Used']);
