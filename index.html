@@ -223,7 +223,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .date-pill.pill-en    { font-family: var(--font-en); color: var(--gold); background: rgba(245,166,35,0.1); border-color: rgba(245,166,35,0.25); }
 .date-pill.pill-bn    { font-family: var(--font-bn); color: var(--ind2); background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25); }
 .date-pill.pill-hijri { font-family: var(--font-bn); color: var(--green); background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.25); }
-.header-dates .clock-time { font-size: 11px; color: var(--sil); font-family: var(--font-en); }
+.header-dates .clock-time { font-size: 21px; font-weight: 800; color: var(--gold); font-family: var(--font-h); letter-spacing: 0.5px; line-height: 1.15; text-shadow: 0 0 18px rgba(245,166,35,0.25); }
 
 .sync-btn {
   background: rgba(79,70,229,0.12); border: 1px solid var(--bd); border-radius: 8px;
@@ -233,6 +233,27 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .sync-btn:hover { background: var(--ind); color: #fff; }
 .sync-btn.spinning { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.logout-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.28); border-radius: 20px;
+  height: 34px; padding: 0 12px; cursor: pointer; transition: all 0.2s;
+  color: var(--red); font-family: var(--font-en);
+}
+.logout-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.logout-btn:hover .logout-timer { color: #fff; }
+.logout-btn .logout-icon { font-size: 14px; line-height: 1; }
+.logout-btn .logout-timer { font-size: 11.5px; font-weight: 700; color: var(--red); letter-spacing: 0.3px; min-width: 38px; text-align: left; font-variant-numeric: tabular-nums; }
+.logout-btn.warn { background: rgba(239,68,68,0.22); animation: logoutPulse 1s ease-in-out infinite; }
+@keyframes logoutPulse { 0%,100%{ box-shadow:0 0 0 rgba(239,68,68,0.4); } 50%{ box-shadow:0 0 10px rgba(239,68,68,0.55); } }
+@media(max-width:640px) {
+  .logout-btn { padding: 0 10px; gap: 4px; }
+  .logout-btn .logout-timer { font-size: 10.5px; min-width: 32px; }
+}
+@media(max-width:480px) {
+  .logout-btn { width: 34px; padding: 0; justify-content: center; border-radius: 8px; }
+  .logout-btn .logout-timer { display: none; }
+}
 
 /* ══════════════════════════════════════════════════════
    TAB NAVIGATION
@@ -449,12 +470,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .greeting-block h2 { font-size:22px; margin-bottom:4px; }
 .greeting-block p { font-size:14px; color:var(--sil); }
 
-.quick-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
-@media(max-width:640px) { .quick-actions { grid-template-columns:1fr 1fr; } }
-.quick-action-btn { background:var(--blk2); border:1px solid var(--bd); border-radius:var(--r); padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.2s; color:var(--sil); }
-.quick-action-btn:hover { border-color:var(--ind); background:rgba(79,70,229,0.08); color:var(--wht); transform:translateY(-2px); }
-.quick-action-btn .qa-icon { font-size:24px; margin-bottom:8px; display:block; }
-.quick-action-btn .qa-label { font-size:12px; font-weight:600; }
+
 
 .timeline { display:flex; flex-direction:column; gap:0; }
 .timeline-item { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid rgba(79,70,229,0.06); }
@@ -676,6 +692,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .modal { border-radius:var(--r) var(--r) 0 0; }
   .date-pills { justify-content:flex-end; max-width:100%; }
   .date-pill { font-size:9.5px; padding:2px 8px; }
+  .header-dates .clock-time { font-size:16px; }
 }
 @media(max-width:480px) {
   .app-header { padding:13px 16px; }
@@ -687,7 +704,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .search-input:focus { width:170px; }
   .date-pills { gap:4px; }
   .date-pill { font-size:8.5px; padding:2px 6px; }
-  .header-dates .clock-time { font-size:9.5px; }
+  .header-dates .clock-time { font-size:13px; }
 }
 @media(max-width:360px) {
   .date-pills { max-width:180px; justify-content:flex-end; }
@@ -794,6 +811,10 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       <div class="status-dot" id="statusDot"></div>
     </div>
     <button class="sync-btn" id="syncBtn" title="Google Sheets Sync" onclick="syncNow()">⟳</button>
+    <button class="logout-btn" id="logoutBtn" title="লগ-আউট" onclick="manualLogout()">
+      <span class="logout-icon">🔒</span>
+      <span class="logout-timer" id="logoutTimer">--:--</span>
+    </button>
   </div>
 </header>
 
@@ -866,21 +887,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
     </div>
 
-    <div class="quick-actions">
-      <div class="quick-action-btn" onclick="switchTab('entry')">
-        <span class="qa-icon">➕</span><span class="qa-label">নতুন এন্ট্রি</span>
-      </div>
-      <div class="quick-action-btn" onclick="switchTab('projects'); openProjectModal()">
-        <span class="qa-icon">🔨</span><span class="qa-label">নতুন প্রজেক্ট</span>
-      </div>
-      <div class="quick-action-btn" onclick="switchTab('tasks'); openTaskModal()">
-        <span class="qa-icon">✅</span><span class="qa-label">Task যোগ</span>
-      </div>
-      <div class="quick-action-btn" onclick="switchTab('shopping'); openShopModal()">
-        <span class="qa-icon">🛒</span><span class="qa-label">Shopping</span>
-      </div>
-    </div>
-
     <div class="grid-2">
       <div class="card">
         <div class="section-head">
@@ -910,6 +916,28 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
     </div>
 
+    <div class="grid-2" style="margin-top:14px">
+      <div class="card">
+        <div class="section-head">
+          <h2 style="font-size:15px;">🛒 Shopping List</h2>
+          <button class="btn btn-ghost btn-xs" onclick="switchTab('shopping')">সব দেখো</button>
+        </div>
+        <div id="dashboardShopPreview">
+          <div class="empty-state" style="padding:20px"><div class="empty-icon">🛒</div><p>এখনো কোনো আইটেম নেই</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2 style="font-size:15px;">📄 সাম্প্রতিক Documents</h2>
+          <button class="btn btn-ghost btn-xs" onclick="switchTab('docs')">সব দেখো</button>
+        </div>
+        <div id="dashboardDocsPreview">
+          <div class="empty-state" style="padding:20px"><div class="empty-icon">📄</div><p>এখনো কোনো Document নেই</p></div>
+        </div>
+      </div>
+    </div>
+
     <div class="card" style="margin-top:14px">
       <div class="section-head">
         <h2 style="font-size:15px;">⏰ আসন্ন Tasks</h2>
@@ -917,16 +945,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
       <div id="upcomingTasksPreview">
         <div class="empty-state" style="padding:20px"><div class="empty-icon">✅</div><p>কোনো pending task নেই</p></div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <div class="section-head">
-        <h2 style="font-size:15px;">📄 সাম্প্রতিক ডকুমেন্ট</h2>
-        <button class="btn btn-ghost btn-xs" onclick="switchTab('docs')">সব দেখো</button>
-      </div>
-      <div id="dashboardDocsPreview">
-        <div class="empty-state" style="padding:20px"><div class="empty-icon">📄</div><p>এখনো কোনো ডকুমেন্ট নেই</p></div>
       </div>
     </div>
 
@@ -2267,8 +2285,30 @@ function updateClock() {
   document.getElementById('headerBangla').textContent  = bangla;
   document.getElementById('headerHijri').textContent   = hijri;
   document.getElementById('headerTime').textContent    = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  updateLogoutTimer();
 }
 setInterval(updateClock, 1000);
+
+// ── HEADER LOGOUT COUNTDOWN ──
+// Shows live time remaining until auto-lock (per Settings → session timeout),
+// on the same button used for manual logout.
+function updateLogoutTimer() {
+  const timerEl = document.getElementById('logoutTimer');
+  const btnEl   = document.getElementById('logoutBtn');
+  if (!timerEl || !btnEl) return;
+  const unlockTime = parseInt(sessionStorage.getItem('nabsfbk_unlock_time') || '0', 10);
+  if (!unlockTime) { timerEl.textContent = '--:--'; btnEl.classList.remove('warn'); return; }
+  const limitMs = (CONFIG.sessionTimeoutMin || 15) * 60 * 1000;
+  const remainingMs = Math.max(0, limitMs - (Date.now() - unlockTime));
+  const totalSec = Math.floor(remainingMs / 1000);
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  timerEl.textContent = `${mm}:${ss}`;
+  btnEl.classList.toggle('warn', remainingMs > 0 && remainingMs <= 60000);
+}
+function manualLogout() {
+  forceReLock('🔒 আপনি লগ-আউট হয়েছেন');
+}
 
 // ──────────────────────────────────────────
 // GREETING
@@ -2764,7 +2804,7 @@ function renderDashboard() {
   document.getElementById('dash-savings').textContent = fmtBDT(savings);
   document.getElementById('dash-projects').textContent = APP_DATA.projects.filter(p=>p.status==='active').length;
   const now = new Date();
-  document.getElementById('dashMonth').textContent = `${BN_MONTHS[now.getMonth()].slice(0,4)} ${now.getFullYear()}`;
+  document.getElementById('dashMonth').textContent = `${BN_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
   const expPct = CONFIG.goalExpense ? Math.min(Math.round(expense/CONFIG.goalExpense*100),100) : 0;
   const savPct = income ? Math.min(Math.round(savings/income*100),100) : 0;
   document.getElementById('bp-exp-pct').textContent = `${expPct}%`;
@@ -2795,6 +2835,27 @@ function renderDashboard() {
       <span class="task-meta en">${t.due||''} · ${t.member}</span>
     </div>
   `).join('') : '<div class="empty-state" style="padding:20px"><div class="empty-icon">✅</div><p>কোনো pending task নেই</p></div>';
+  // Shopping list preview (Dashboard)
+  const catI2Dash = {Grocery:'🍎',Household:'🏠',Clothing:'👕',Electronics:'💻',Medicine:'💊',Other:'📦'};
+  const allShop = APP_DATA.shopping||[];
+  const pendingShop = allShop.filter(s=>!s.bought).slice(0,4);
+  const shopDiv = document.getElementById('dashboardShopPreview');
+  if (!allShop.length) {
+    shopDiv.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">🛒</div><p>এখনো কোনো আইটেম নেই</p></div>';
+  } else if (!pendingShop.length) {
+    shopDiv.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-icon">🛒</div><p>সব কেনা শেষ! 🎉</p></div>';
+  } else {
+    shopDiv.innerHTML = pendingShop.map(s=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--blk3);border-radius:8px;margin-bottom:6px;border-left:3px solid rgba(245,166,35,0.4)">
+        <span style="font-size:18px">${catI2Dash[s.category]||'📦'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}${s.qty?' <span style="color:var(--sil2);font-weight:500">× '+s.qty+'</span>':''}</div>
+          <div style="font-size:11px;color:var(--sil2)">${s.category}${s.list?' · '+s.list:''}</div>
+        </div>
+        ${s.price>0?`<span style="font-size:12.5px;font-weight:700;color:var(--gold)">${fmtBDT(s.price)}</span>`:''}
+      </div>
+    `).join('');
+  }
   // Recent documents (last section of Dashboard)
   const typeI={note:'📝',warranty:'🛡️',bill:'🧾',guide:'📖',contact:'📞',other:'📁'};
   const recentDocs = (APP_DATA.docs||[]).slice(0,4);
@@ -3986,12 +4047,16 @@ function armSessionTimeout() {
   _sessionTimeoutTimer = setTimeout(forceReLock, remaining);
 }
 
-function forceReLock() {
+function forceReLock(customMessage) {
   clearSessionUnlocked();
   document.getElementById('appLockInput').value = '';
   document.getElementById('appLockScreen').classList.remove('hidden');
   document.getElementById('app').classList.add('locked');
-  toast('⏱️ নিষ্ক্রিয়তার কারণে অ্যাপ লক হয়ে গেছে', 'warning');
+  const msg = (typeof customMessage === 'string' && customMessage)
+    ? customMessage
+    : '⏱️ নিষ্ক্রিয়তার কারণে অ্যাপ লক হয়ে গেছে';
+  toast(msg, 'warning');
+  updateLogoutTimer();
 }
 
 function saveSessionTimeout() {
