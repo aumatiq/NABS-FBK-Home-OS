@@ -279,7 +279,12 @@ function formatDateVal(v) {
 function handleSync(body) {
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
 
-  if (body.entries) {
+  // SAFETY: only ever touch a sheet when the incoming array actually has
+  // data. An empty array is treated as "nothing to sync" (no-op), NOT as
+  // "clear everything" — this prevents a brand-new/empty device from
+  // wiping the whole Sheet the first time it pushes before it has pulled
+  // anything down yet.
+  if (Array.isArray(body.entries) && body.entries.length) {
     const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName'];
     const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
     ensureHeaders(sheet, headers);
@@ -290,7 +295,7 @@ function handleSync(body) {
     ]), headers.length);
   }
 
-  if (body.projects) {
+  if (Array.isArray(body.projects) && body.projects.length) {
     const headers = ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt','DriveFileId','DriveFileName'];
     const sheet = getOrCreateSheet(ss, SHEETS.PROJECTS, headers);
     ensureHeaders(sheet, headers);
@@ -308,10 +313,10 @@ function handleSync(body) {
     body.projects.forEach(p => (p.costs||[]).forEach(c => {
       costRows.push([c.id||'', p.id||'', c.name||'', c.amount||0, c.date||'', c.linkedEntryId||'']);
     }));
-    writeRows(costSheet, costRows, costHeaders.length);
+    if (costRows.length) writeRows(costSheet, costRows, costHeaders.length);
   }
 
-  if (body.tasks) {
+  if (Array.isArray(body.tasks) && body.tasks.length) {
     const headers = ['ID','Text','Due','Priority','Member','Category','Done','Notes','CreatedAt','DriveFileId','DriveFileName'];
     const sheet = getOrCreateSheet(ss, SHEETS.TASKS, headers);
     ensureHeaders(sheet, headers);
@@ -321,7 +326,7 @@ function handleSync(body) {
     ]), headers.length);
   }
 
-  if (body.shopping) {
+  if (Array.isArray(body.shopping) && body.shopping.length) {
     const headers = ['ID','Name','Qty','Price','Category','List','Bought','Note','ExpensedEntryId','DriveFileId','DriveFileName'];
     const sheet = getOrCreateSheet(ss, SHEETS.SHOPPING, headers);
     ensureHeaders(sheet, headers);
@@ -331,7 +336,7 @@ function handleSync(body) {
     ]), headers.length);
   }
 
-  if (body.docs) {
+  if (Array.isArray(body.docs) && body.docs.length) {
     const headers = ['ID','Title','Category','Type','Tags','Content','DriveFileId','DriveFileName','UpdatedAt'];
     const sheet = getOrCreateSheet(ss, SHEETS.DOCS, headers);
     ensureHeaders(sheet, headers);
