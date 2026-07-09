@@ -3836,8 +3836,8 @@ function clearAllData() {
  *  a future pullDataFromBackend() (which otherwise wouldn't know it
  *  was deleted, since the Sheet would still have the old row). */
 function pushDataToBackend() {
-  if (!CONFIG.webAppUrl) return;
-  fetch(`${CONFIG.webAppUrl}?action=sync`,{
+  if (!CONFIG.webAppUrl) return Promise.resolve();
+  return fetch(`${CONFIG.webAppUrl}?action=sync`,{
     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({
       entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
@@ -3936,7 +3936,16 @@ function initApp() {
   // Pull latest entries/projects/tasks/shopping/docs from the Sheet —
   // this is what keeps every device (desktop, mobile app, mobile browser)
   // showing the same up-to-date data instead of a stale local copy.
-  pullDataFromBackend();
+  // We push first (in case this device has anything added while offline
+  // that never made it to the Sheet yet), THEN pull the now-canonical
+  // Sheet state — so deletions/edits made on other devices (or directly
+  // in the Sheet) correctly reach this device too.
+  // (If this device is completely empty — e.g. first-ever open — skip
+  // the push and just pull, so we never send an empty dataset up.)
+  const hasLocalData = (APP_DATA.entries.length + APP_DATA.projects.length +
+    APP_DATA.tasks.length + APP_DATA.shopping.length + APP_DATA.docs.length) > 0;
+  if (hasLocalData) pushDataToBackend().then(() => pullDataFromBackend());
+  else pullDataFromBackend();
   // Start the auto-logout countdown for this login
   armSessionTimeout();
 }
