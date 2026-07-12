@@ -869,15 +869,16 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .sync-btn-wrap     { grid-area:sync; justify-self:center; }
   .logout-btn        { grid-area:lock; justify-self:center; }
 
-  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; max-width:100%; overflow:visible; }
-  /* Row 1's 3rd column cell is otherwise empty (dates only starts at row 2),
-     so letting "name" span columns 2–3 here gives the client name real
-     extra width to fit on one line — no visual overlap with anything. */
+  /* Name spans columns 2–3 (row 1's column-3 cell is otherwise empty,
+     since dates only start at row 2) so the full name always has room —
+     never clipped. overflow:visible lets it spill into column 3's empty
+     space if it's ever wider than column 2 alone, instead of truncating. */
+  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; overflow:visible; }
   .header-title .name-desktop { display:none; }
   .header-title .name-mobile  { display:inline-block; }
   .header-title .name {
     white-space:nowrap; overflow:visible; text-overflow:clip; max-width:none;
-    font-size:15.5px; font-weight:800;
+    font-size:22px; font-weight:800;
   }
   .header-title .sub { padding-left:0; font-size:9px; }
 
@@ -900,7 +901,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .header-title .sub { display:none; }
 }
 @media(max-width:360px) {
-  .header-title .name { font-size:13.5px; letter-spacing:0; padding:2px 6px; }
+  .header-title .name { letter-spacing:0; padding:2px 6px; }
 }
 
 
@@ -5232,13 +5233,23 @@ function initApp() {
   CONFIG.customTabs.forEach(tab=>addCustomTabToDOM(tab));
   renderDashboard();
   renderRecentEntries();
-  // Reopen whichever tab the user was on before refresh/reload, instead of
-  // always dropping back to Dashboard. Settings still re-asks for the
-  // Admin password as usual — this only restores which tab, not the lock.
+  // Reopen whichever tab the user was on before a refresh/reload — but only
+  // for an actual in-place refresh. sessionStorage survives page reloads
+  // within the same tab/app session but is cleared when the tab or app is
+  // actually closed, so we use it to tell the two cases apart: refresh →
+  // restore last tab; fresh open after close/exit → always land on
+  // Dashboard. Settings still re-asks for the Admin password as usual —
+  // this only restores which tab, not the lock.
   try {
-    const lastTab = localStorage.getItem('nabsfbk_last_tab');
-    if (lastTab && lastTab !== 'dashboard' && document.getElementById(`tab-${lastTab}`)) {
-      switchTab(lastTab);
+    const isRefresh = sessionStorage.getItem('nabsfbk_session_active') === '1';
+    sessionStorage.setItem('nabsfbk_session_active', '1');
+    if (isRefresh) {
+      const lastTab = localStorage.getItem('nabsfbk_last_tab');
+      if (lastTab && lastTab !== 'dashboard' && document.getElementById(`tab-${lastTab}`)) {
+        switchTab(lastTab);
+      }
+    } else {
+      localStorage.setItem('nabsfbk_last_tab', 'dashboard');
     }
   } catch(e) {}
   // Pull latest password hashes + budget goals from backend (cross-device sync)
@@ -5260,10 +5271,29 @@ function initApp() {
 // ──────────────────────────────────────────
 // SESSION TIMEOUT (configurable auto-logout)
 // ──────────────────────────────────────────
-// Strict timeout counted from LOGIN time (not reset by activity).
+// Inactivity timeout: the countdown resets every time the user touches/
+// clicks/types anywhere on screen (see the activity listeners below), so
+// the auto-logout only fires after N minutes of no interaction — not a
+// strict timer from login. Settings → auto-logout duration (sessionTimeoutMin)
+// still controls the length exactly as before.
 // sessionStorage is tab-scoped, so closing the tab/browser already logs
-// out on its own — this adds an absolute timer while the tab stays open.
+// out on its own — this timer only matters while the tab stays open.
 let _sessionTimeoutTimer = null;
+let _lastActivityResetAt = 0;
+
+function resetSessionActivity() {
+  // Only meaningful while actually unlocked; throttle to at most once/sec
+  // so rapid touches/keystrokes don't spam sessionStorage writes.
+  if (sessionStorage.getItem('nabsfbk_unlocked') !== '1') return;
+  const now = Date.now();
+  if (now - _lastActivityResetAt < 1000) return;
+  _lastActivityResetAt = now;
+  sessionStorage.setItem('nabsfbk_unlock_time', String(now));
+  armSessionTimeout();
+}
+['touchstart', 'mousedown', 'keydown'].forEach(evt => {
+  document.addEventListener(evt, resetSessionActivity, { passive: true });
+});
 
 function markSessionUnlocked() {
   sessionStorage.setItem('nabsfbk_unlocked', '1');
