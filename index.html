@@ -270,6 +270,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   background-color: rgba(245,166,35,0.06);
 }
 .header-title .sub { font-family: var(--font-en); font-size: 10px; color: var(--sil); letter-spacing: 1.3px; text-transform: uppercase; font-weight: 500; padding-left: 10px; }
+.header-title .name-mobile { display: none; } /* mobile-only text, shown ≤640px — see header grid media query below */
 
 .header-right { display: flex; align-items: center; gap: 10px; }
 
@@ -857,7 +858,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     grid-template-columns:auto 1fr auto;
     grid-template-rows:auto auto auto;
     grid-template-areas:
-      "logo name  ."
+      "logo name  name"
       "sync .     dates"
       "lock time  dates";
     align-items:center; row-gap:6px; column-gap:10px;
@@ -868,9 +869,14 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .sync-btn-wrap     { grid-area:sync; justify-self:center; }
   .logout-btn        { grid-area:lock; justify-self:center; }
 
-  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; }
+  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; max-width:100%; overflow:visible; }
+  /* Row 1's 3rd column cell is otherwise empty (dates only starts at row 2),
+     so letting "name" span columns 2–3 here gives the client name real
+     extra width to fit on one line — no visual overlap with anything. */
+  .header-title .name-desktop { display:none; }
+  .header-title .name-mobile  { display:inline-block; }
   .header-title .name {
-    white-space:normal; overflow:visible; text-overflow:clip; max-width:none;
+    white-space:nowrap; overflow:visible; text-overflow:clip; max-width:none;
     font-size:15.5px; font-weight:800;
   }
   .header-title .sub { padding-left:0; font-size:9px; }
@@ -892,6 +898,9 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 }
 @media(max-width:400px) {
   .header-title .sub { display:none; }
+}
+@media(max-width:360px) {
+  .header-title .name { font-size:13.5px; letter-spacing:0; padding:2px 6px; }
 }
 
 
@@ -997,7 +1006,8 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   <div class="header-logo">
     <a class="header-logo-icon" href="https://www.aumatiq.com" target="_blank" rel="noopener noreferrer" title="www.aumatiq.com" aria-label="Visit AUMATIQ website">A</a>
     <a class="header-title" href="#" onclick="switchTab('dashboard');return false;" title="ড্যাশবোর্ডে যান">
-      <span class="name">NABS&amp;FBK Home OS</span>
+      <span class="name name-desktop">NABS&amp;FBK Home OS</span>
+      <span class="name name-mobile">NABS🩷FBK Home OS</span>
       <span class="sub en">Family Management System</span>
     </a>
   </div>
