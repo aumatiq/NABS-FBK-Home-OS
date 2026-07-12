@@ -11,8 +11,8 @@ const CONFIG = {
   SHEET_ID:         '1RLoBAewJ6GbgAm_NpF9i4ZDD3LKFsqVlbintntWgwaM',          // Google Sheets ID (from URL)
   APP_PASS_HASH:    'fh4u6k',    // Run hashPass('NABSFBK2025') in console to get this
   ADMIN_PASS_HASH:  '-ol2yc0',    // Run hashPass('ADMIN2025') to get this
-  RESET_EMAIL:      '',          // Password reset OTP email
-  REPORT_EMAIL:     '',          // Weekly/monthly report email
+  RESET_EMAIL:      'binkhair@gmail.com',          // Password reset OTP email
+  REPORT_EMAIL:     'nabilahome274@gmail.com',          // Weekly/monthly report email
   DRIVE_FOLDER_ID:  '1_wGbs0aMfmxEKgU6ev9mXgmchZe_9z_x',          // Master Drive folder ID for documents
   TIMEZONE:         'Asia/Dhaka'
 };
