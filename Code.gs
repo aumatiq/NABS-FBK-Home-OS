@@ -25,6 +25,7 @@ const SHEETS = {
   TASKS:     'Tasks',
   SHOPPING:  'Shopping',
   DOCS:      'Documents',
+  BILLS:     'Bills',
   SETTINGS:  'Settings',
   OTP_LOG:   'OTP_Log',
   SYNC_LOG:  'Sync_Log'
@@ -236,13 +237,33 @@ function handleAddEntry(body) {
   const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName'];
   const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
   ensureHeaders(sheet, headers);
-  sheet.appendRow([
+
+  const rowValues = [
     body.id || '', body.date || '', body.type || '', body.category || '',
     parseFloat(body.amount) || 0, body.member || '', body.payment || '',
     body.note || '', body.createdAt || new Date().toISOString(),
     body.driveFileId || '', body.driveFileName || ''
-  ]);
-  return jsonResp({ status: 'ok', id: body.id });
+  ];
+
+  // Upsert by ID: if this entry already exists (this call is an EDIT,
+  // not a new entry), update that exact row in place instead of
+  // creating a duplicate row.
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2 && body.id) {
+    const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (let i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]) === String(body.id)) {
+        sheet.getRange(i + 2, 1, 1, headers.length).setValues([rowValues]);
+        return jsonResp({ status: 'ok', id: body.id, action: 'updated' });
+      }
+    }
+  }
+
+  // New entry — insert right below the header (row 2), so the sheet
+  // always reads newest-first at the top, matching the app's own list.
+  sheet.insertRowBefore(2);
+  sheet.getRange(2, 1, 1, headers.length).setValues([rowValues]);
+  return jsonResp({ status: 'ok', id: body.id, action: 'inserted' });
 }
 
 /**
@@ -346,6 +367,17 @@ function handleSync(body) {
     ]), headers.length);
   }
 
+  if (Array.isArray(body.bills) && body.bills.length) {
+    const headers = ['ID','CategoryId','Category','Month','Amount','Member','PaymentMethod','Note','DueDate','Status','PaidDate','PaidAmount','LinkedEntryId','CreatedAt','UpdatedAt'];
+    const sheet = getOrCreateSheet(ss, SHEETS.BILLS, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.bills.map(b => [
+      b.id||'', b.categoryId||'', b.category||'', b.month||'', b.amount||0, b.member||'',
+      b.payment||'', b.note||'', b.dueDate||'', b.status||'pending', b.paidDate||'',
+      b.paidAmount||'', b.linkedEntryId||'', b.createdAt||'', b.updatedAt||''
+    ]), headers.length);
+  }
+
   // Log sync
   const logSheet = getOrCreateSheet(ss, SHEETS.SYNC_LOG, ['Timestamp','EntriesCount','Status']);
   logSheet.appendRow([new Date(), (body.entries||[]).length, 'ok']);
@@ -422,7 +454,18 @@ function handlePullData() {
     updatedAt:r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : ''
   }));
 
-  return jsonResp({ status:'ok', entries, projects, tasks, shopping, docs, pulledAt: new Date().toISOString() });
+  const billHeaders = ['ID','CategoryId','Category','Month','Amount','Member','PaymentMethod','Note','DueDate','Status','PaidDate','PaidAmount','LinkedEntryId','CreatedAt','UpdatedAt'];
+  const bills = readSheet(SHEETS.BILLS, billHeaders).map(r => ({
+    id:String(r.ID), categoryId:r.CategoryId, category:r.Category, month:r.Month,
+    amount:Number(r.Amount)||0, member:r.Member, payment:r.PaymentMethod, note:r.Note,
+    dueDate:formatDateVal(r.DueDate), status:r.Status||'pending',
+    paidDate:r.PaidDate?formatDateVal(r.PaidDate):null, paidAmount:r.PaidAmount?Number(r.PaidAmount):null,
+    linkedEntryId:r.LinkedEntryId||null,
+    createdAt:r.CreatedAt ? new Date(r.CreatedAt).toISOString() : '',
+    updatedAt:r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : ''
+  }));
+
+  return jsonResp({ status:'ok', entries, projects, tasks, shopping, docs, bills, pulledAt: new Date().toISOString() });
 }
 
 // ══════════════════════════════════════════════════════════

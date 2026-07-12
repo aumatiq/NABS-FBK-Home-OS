@@ -549,6 +549,26 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .status-planning { background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.3); }
 .status-active { background:rgba(245,166,35,0.15); color:var(--gold); border:1px solid var(--bd-gold); }
 .status-done { background:rgba(34,197,94,0.15); color:var(--green); border:1px solid rgba(34,197,94,0.3); }
+.status-overdue { background:rgba(239,68,68,0.15); color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+
+/* BILLS TAB */
+.tab-notif-badge { position:absolute; top:2px; right:2px; min-width:16px; height:16px; padding:0 4px; border-radius:20px; background:var(--red); color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1; font-family:var(--font-num); box-shadow:0 0 0 2px var(--header-bg); }
+.bill-card { background:var(--blk2); border:1px solid var(--bd); border-radius:var(--r2); padding:18px 20px; margin-bottom:12px; transition:all 0.2s; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.bill-card:hover { border-color:var(--bd2); }
+.bill-card.is-paid { opacity:0.72; }
+.bill-card.is-overdue { border-color:rgba(239,68,68,0.35); }
+.bill-icon-box { width:44px; height:44px; flex-shrink:0; border-radius:12px; background:var(--blk3); display:flex; align-items:center; justify-content:center; font-size:20px; }
+.bill-main { flex:1; min-width:160px; }
+.bill-name { font-family:var(--font-h); font-size:14.5px; font-weight:700; color:var(--wht); margin-bottom:4px; }
+.bill-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11.5px; color:var(--sil2); }
+.bill-amount { font-family:var(--font-num); font-size:18px; font-weight:800; color:var(--gold); white-space:nowrap; }
+.bill-actions { display:flex; gap:6px; flex-shrink:0; }
+.emoji-pick-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.emoji-pick-btn { width:36px; height:36px; border-radius:9px; background:var(--blk3); border:1px solid var(--bd); font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.emoji-pick-btn:hover { border-color:var(--ind); }
+.emoji-pick-btn.active { border-color:var(--ind); background:rgba(79,70,229,0.18); box-shadow:0 0 0 2px rgba(79,70,229,0.25); }
+.bill-cat-chip-info { display:flex; flex-direction:column; gap:1px; }
+.bill-cat-chip-info .bcc-sub { font-size:10px; color:var(--sil2); }
 .status-paused { background:rgba(160,160,176,0.1); color:var(--sil); border:1px solid rgba(160,160,176,0.2); }
 .status-future { background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.3); }
 
@@ -818,29 +838,62 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 }
 
 /* ══════════════════════════════════════════════════════
-   HEADER — MOBILE PORTRAIT
-   Keeps the same 2-row / 2-column layout as before:
-   Row 1: logo + title (full width)
-   Row 2: date pills + clock (left region) | sync + logout (right region)
-   Only the CONTENT inside each region is centered now — the
-   regions themselves stay exactly where they were.
+   HEADER — MOBILE PORTRAIT (3-row × 3-column grid, per spec)
+   Col 1 (icons, centered):  Row1 Logo · Row2 Sync · Row3 Lock
+   Col 2 (client-name col):  Row1 Name block (center) · Row3 Time (H1, center)
+   Col 3 (dates, spans Row2+Row3): Bangla → Arabic → English,
+                              right-aligned, H3, height-justified
+   .header-logo / .header-right / .header-meta / .header-dates /
+   .header-actions become `display:contents` here so their real
+   children (logo icon, title, date-pills, clock, sync, logout)
+   become direct items of the `.app-header` grid — no DOM change,
+   desktop keeps its original flex layout untouched outside this
+   media query.
    ══════════════════════════════════════════════════════ */
 .header-meta { display:flex; align-items:center; gap:10px; }
 @media(max-width:640px) {
-  .app-header { flex-wrap:wrap; justify-content:center; row-gap:12px; }
-  .header-title { align-items:center; }
+  .app-header {
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    grid-template-rows:auto auto auto;
+    grid-template-areas:
+      "logo name  ."
+      "sync .     dates"
+      "lock time  dates";
+    align-items:center; row-gap:6px; column-gap:10px;
+  }
+  .header-logo, .header-right, .header-meta, .header-dates, .header-actions { display:contents; }
+
+  .header-logo-icon { grid-area:logo; justify-self:center; }
+  .sync-btn-wrap     { grid-area:sync; justify-self:center; }
+  .logout-btn        { grid-area:lock; justify-self:center; }
+
+  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; }
   .header-title .name {
     white-space:normal; overflow:visible; text-overflow:clip; max-width:none;
+    font-size:15.5px; font-weight:800;
   }
-  .header-title .sub { padding-left:0; }
-  .header-right { flex:1 1 100%; justify-content:space-between; align-items:flex-start; }
-  .header-meta { flex:1 1 auto; min-width:0; }
-  .header-dates { align-items:center; }
-  .date-pills { justify-content:center; }
+  .header-title .sub { padding-left:0; font-size:9px; }
+
+  .header-dates .clock-time {
+    grid-area:time; justify-self:center; align-self:center;
+    font-size:22px; padding:2px 8px;
+  }
+
+  .date-pills {
+    grid-area:dates; flex-direction:column; flex-wrap:nowrap;
+    align-items:flex-end; justify-content:space-between;
+    height:100%; max-width:none; gap:4px;
+  }
+  .date-pill.pill-bn    { order:1; }
+  .date-pill.pill-hijri { order:2; }
+  .date-pill.pill-en    { order:3; }
+  .date-pill { font-size:10.5px; font-weight:700; padding:2px 9px; }
 }
 @media(max-width:400px) {
   .header-title .sub { display:none; }
 }
+
 
 /* ══════════════════════════════════════════════════════
    CHART.JS CANVAS WRAPPERS (Budget Progress + Finance tab)
@@ -978,6 +1031,10 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <button class="tab-btn active" data-tab="dashboard">
       <span class="tab-icon">🏠</span> ড্যাশবোর্ড
     </button>
+    <button class="tab-btn" data-tab="bills" style="position:relative">
+      <span class="tab-icon">📃</span> Bills
+      <span class="tab-notif-badge" id="billsNotifBadge" style="display:none">0</span>
+    </button>
     <button class="tab-btn" data-tab="entry">
       <span class="tab-icon">➕</span> এন্ট্রি
     </button>
@@ -1113,6 +1170,47 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 
 
   <!-- ══════════════════════════════════
+       TAB: BILLS
+       ══════════════════════════════════ -->
+  <div class="tab-panel" id="tab-bills">
+
+    <div class="section-head">
+      <h2>📃 মাসিক Bills</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-ind en" id="billsMonthLabel">—</span>
+        <button class="btn btn-ghost btn-sm" onclick="openManageBillCategoriesModal()">🏷️ ক্যাটাগরি ম্যানেজ</button>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-bottom:20px">
+      <div class="stat-card ind-top">
+        <div class="stat-label">📃 মোট Bill</div>
+        <div class="stat-value ind" id="bill-total">০</div>
+      </div>
+      <div class="stat-card gold-top">
+        <div class="stat-label">⏳ Pending</div>
+        <div class="stat-value gold" id="bill-pending">০</div>
+        <div class="stat-sub en" id="bill-pending-amt">৳ ০</div>
+      </div>
+      <div class="stat-card red-top">
+        <div class="stat-label">❎ Overdue</div>
+        <div class="stat-value red" id="bill-overdue">০</div>
+      </div>
+      <div class="stat-card green-top">
+        <div class="stat-label">✅ Paid</div>
+        <div class="stat-value green" id="bill-paid">০</div>
+        <div class="stat-sub en" id="bill-paid-amt">৳ ০</div>
+      </div>
+    </div>
+
+    <div id="billsList">
+      <div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>🏷️ ক্যাটাগরি ম্যানেজ থেকে Bill ক্যাটাগরি যোগ করো</p></div>
+    </div>
+  </div>
+  <!-- END BILLS -->
+
+
+  <!-- ══════════════════════════════════
        TAB: ENTRY
        ══════════════════════════════════ -->
   <div class="tab-panel" id="tab-entry">
@@ -1133,9 +1231,10 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     </div>
 
     <div class="form-group" style="margin-bottom:16px" id="entryLinkTypeWrap">
-      <label class="form-label">🔗 কোনো Task / Shopping / Project / Document-এর খরচ পরিশোধ করছেন? (ঐচ্ছিক)</label>
+      <label class="form-label">🔗 কোনো Bill / Task / Shopping / Project / Document-এর খরচ পরিশোধ করছেন? (ঐচ্ছিক)</label>
       <select class="form-select" id="entryLinkType" onchange="updateEntryLinkItemOptions()">
         <option value="">— না, এটা একটা সাধারণ এন্ট্রি —</option>
+        <option value="bill">📃 Bill পরিশোধ করছি</option>
         <option value="task">✅ Task সম্পন্ন করছি</option>
         <option value="shopping">🛒 Shopping আইটেম কিনলাম</option>
         <option value="project">🔧 Project-এর খরচ দিলাম</option>
@@ -2019,6 +2118,91 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   </div>
 </div>
 
+<!-- MANAGE BILL CATEGORIES MODAL -->
+<div class="modal-overlay" id="manageBillCategoriesModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h3>🏷️ Bill ক্যাটাগরি ম্যানেজ</h3><button class="modal-close" onclick="closeModal('manageBillCategoriesModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--sil2)">প্রতি মাসের ১ তারিখ থেকে এই ক্যাটাগরিগুলোর জন্য স্বয়ংক্রিয়ভাবে Pending bill তৈরি হবে।</p>
+      <div id="billCatManage"></div>
+      <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:6px" onclick="openBillCategoryModal()">➕ নতুন Bill ক্যাটাগরি যোগ করো</button>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('manageBillCategoriesModal')">✅ হয়ে গেছে</button></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT BILL CATEGORY MODAL -->
+<div class="modal-overlay" id="billCategoryModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="billCategoryModalTitle">📃 নতুন Bill ক্যাটাগরি</h3><button class="modal-close" onclick="closeModal('billCategoryModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Icon</label>
+        <div class="emoji-pick-row" id="billIconPickRow"></div>
+        <input type="text" class="form-input" id="bcIconInput" placeholder="নিজের Icon লিখুন (ঐচ্ছিক)" maxlength="4" style="margin-top:8px" oninput="pickBillCatIcon(this.value)">
+      </div>
+      <div class="form-group"><label class="form-label">ক্যাটাগরির নাম *</label><input type="text" class="form-input" id="bcName" placeholder="যেমন: ডিশ / ক্যাবল বিল"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Finance ক্যাটাগরি *</label>
+          <select class="form-select" id="bcFinanceCategory" onchange="document.getElementById('bcNewFinCatWrap').style.display=this.value==='__new__'?'block':'none'"></select>
+        </div>
+        <div class="form-group"><label class="form-label">ডিফল্ট এমাউন্ট (৳)</label><input type="number" class="form-input" id="bcAmount" placeholder="০" min="0"></div>
+      </div>
+      <div class="form-group" id="bcNewFinCatWrap" style="display:none">
+        <label class="form-label">নতুন Finance ক্যাটাগরির নাম</label>
+        <input type="text" class="form-input" id="bcNewFinCat" placeholder="যেমন: ডিশ/ক্যাবল">
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ডিফল্ট সদস্য</label><select class="form-select" id="bcMember"></select></div>
+        <div class="form-group"><label class="form-label">ডিফল্ট Payment Method</label>
+          <select class="form-select" id="bcPayment">
+            <option value="Cash">💵 Cash</option><option value="bKash">📱 bKash</option>
+            <option value="Nagad">📱 Nagad</option><option value="Rocket">📱 Rocket</option>
+            <option value="Bank">🏦 Bank Transfer</option><option value="Card">💳 Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ডিফল্ট নোট</label><input type="text" class="form-input" id="bcNote" placeholder="যেমন: মাসিক বিদ্যুৎ বিল"></div>
+        <div class="form-group"><label class="form-label">ডিফল্ট Due তারিখ (মাসের কত তারিখ)</label><input type="number" class="form-input" id="bcDueDay" placeholder="যেমন: ১০" min="1" max="31"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('billCategoryModal')">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveBillCategory()">💾 সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT THIS MONTH'S BILL INSTANCE MODAL -->
+<div class="modal-overlay" id="billInstanceModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="billInstanceModalTitle">✏️ Bill সম্পাদনা</h3><button class="modal-close" onclick="closeModal('billInstanceModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">এমাউন্ট (৳) *</label><input type="number" class="form-input" id="biAmount" placeholder="০" min="0"></div>
+        <div class="form-group"><label class="form-label">Due তারিখ</label><input type="date" class="form-input" id="biDueDate"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">সদস্য</label><select class="form-select" id="biMember"></select></div>
+        <div class="form-group"><label class="form-label">Payment Method</label>
+          <select class="form-select" id="biPayment">
+            <option value="Cash">💵 Cash</option><option value="bKash">📱 bKash</option>
+            <option value="Nagad">📱 Nagad</option><option value="Rocket">📱 Rocket</option>
+            <option value="Bank">🏦 Bank Transfer</option><option value="Card">💳 Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">নোট</label><input type="text" class="form-input" id="biNote" placeholder="বিস্তারিত…"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('billInstanceModal')">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveBillInstance()">💾 সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD CUSTOM TAB MODAL -->
 <div class="modal-overlay" id="addTabModal">
   <div class="modal" style="max-width:460px">
@@ -2154,6 +2338,19 @@ function openNoteForTab(tabId) {
 const CFG_KEY  = 'nabsfbk_config';
 const DATA_KEY = 'nabsfbk_data';
 
+// ─── BILLS: default category seed ───
+function DEFAULT_BILL_CATEGORIES() {
+  return [
+    { id: uid(), name: 'বিদ্যুৎ বিল', icon: '⚡', financeCategory: 'বিদ্যুৎ', defaultAmount: 0, defaultMember: '', defaultPayment: 'bKash', defaultNote: 'মাসিক বিদ্যুৎ বিল', defaultDueDay: 10 },
+    { id: uid(), name: 'গ্যাস বিল', icon: '⛽', financeCategory: 'গ্যাস', defaultAmount: 0, defaultMember: '', defaultPayment: 'bKash', defaultNote: 'মাসিক গ্যাস বিল', defaultDueDay: 10 },
+    { id: uid(), name: 'পানির বিল', icon: '🚰', financeCategory: 'পানি', defaultAmount: 0, defaultMember: '', defaultPayment: 'bKash', defaultNote: 'মাসিক পানির বিল', defaultDueDay: 10 },
+    { id: uid(), name: 'বাসা ভাড়া', icon: '📃', financeCategory: 'ভাড়া', defaultAmount: 0, defaultMember: '', defaultPayment: 'Bank', defaultNote: 'মাসিক বাসা ভাড়া', defaultDueDay: 5 },
+    { id: uid(), name: 'ইন্টারনেট বিল', icon: '🛜', financeCategory: 'ইন্টারনেট', defaultAmount: 0, defaultMember: '', defaultPayment: 'bKash', defaultNote: 'মাসিক ইন্টারনেট বিল', defaultDueDay: 15 },
+    { id: uid(), name: 'বুয়া/সহকারী বেতন', icon: '👩‍🍳', financeCategory: 'গৃহকর্মী', defaultAmount: 0, defaultMember: '', defaultPayment: 'Cash', defaultNote: 'মাসিক বেতন', defaultDueDay: 1 },
+    { id: uid(), name: 'কার্ড বিল', icon: '💳', financeCategory: 'কার্ড বিল', defaultAmount: 0, defaultMember: '', defaultPayment: 'Bank', defaultNote: 'ক্রেডিট কার্ড বিল', defaultDueDay: 20 }
+  ];
+}
+
 // ─── DEFAULT CONFIG ───
 let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {
   webAppUrl:       '',
@@ -2183,16 +2380,18 @@ let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {
   projectCategories:  ['Electrical','Plumbing','Painting','Furniture','Garden','Tech','Maintenance'],
   docCategories:      ['সাধারণ নোট','Warranty','Bills','Appliances','Insurance','Documents','Others'],
   shoppingLists:      ['নিয়মিত বাজার','জরুরি কেনাকাটা','মাসিক বাজার'],
+  billCategories:     DEFAULT_BILL_CATEGORIES(),
   customTabs:         []
 };
 
 let APP_DATA = JSON.parse(localStorage.getItem(DATA_KEY) || 'null') || {
-  entries:  [], projects: [], tasks: [], shopping: [], docs: []
+  entries:  [], projects: [], tasks: [], shopping: [], docs: [], bills: []
 };
 
 // Edit state
 let editingProjectId = null, editingTaskId = null, editingDocId = null;
 let editingEntryId = null, editingShopId = null, addCostToProject = null;
+let editingBillId = null, editingBillCatId = null, pickedBillCatIcon = '';
 let currentHistoryDate = new Date();
 let currentDocCatFilter = '';
 let pendingSecureAction = null, pendingSecureLockType = null;
@@ -2217,6 +2416,22 @@ function hashPass(str) {
 // ──────────────────────────────────────────
 function saveConfig() { localStorage.setItem(CFG_KEY, JSON.stringify(CONFIG)); }
 function saveData()   { localStorage.setItem(DATA_KEY, JSON.stringify(APP_DATA)); }
+function ensureBillCategoryFinanceCategories() {
+  (CONFIG.billCategories || []).forEach(function(c){
+    if (c.financeCategory && CONFIG.categories.expense.indexOf(c.financeCategory) === -1) {
+      CONFIG.categories.expense.push(c.financeCategory);
+    }
+  });
+}
+if (!Array.isArray(CONFIG.billCategories)) {
+  CONFIG.billCategories = DEFAULT_BILL_CATEGORIES();
+  ensureBillCategoryFinanceCategories();
+  saveConfig();
+}
+if (!Array.isArray(APP_DATA.bills)) {
+  APP_DATA.bills = [];
+  saveData();
+}
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function fmtBDT(n) { n = parseFloat(n)||0; return '৳ ' + n.toLocaleString(); }
 function today() { return new Date().toISOString().split('T')[0]; }
@@ -2547,6 +2762,7 @@ function switchTab(tabId) {
   }
   _doSwitchTab(tabId);
   if (tabId === 'dashboard')  renderDashboard();
+  if (tabId === 'bills')      renderBills();
   if (tabId === 'finance')    renderFinance();
   if (tabId === 'history')    renderHistory();
   if (tabId === 'projects')   renderProjects();
@@ -2919,7 +3135,8 @@ async function confirmAndSaveEntry() {
     amount, category, date, member, payment, note,
     driveFileId:   driveFileId   || existingEntry?.driveFileId   || null,
     driveFileName: driveFileName || existingEntry?.driveFileName || null,
-    createdAt: new Date().toISOString()
+    createdAt: existingEntry?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
   if (isEditing) {
@@ -2955,6 +3172,13 @@ function applyEntryLinkCompletion(entry) {
   if (type === 'task') {
     const t = APP_DATA.tasks.find(x => x.id === itemId);
     if (t) { t.done = true; saveData(); renderTasks(); toast(`✅ "${t.text}" Task সম্পন্ন হিসেবে চিহ্নিত হলো!`); }
+  } else if (type === 'bill') {
+    const b = APP_DATA.bills.find(x => x.id === itemId);
+    if (b) {
+      b.status = 'paid'; b.paidDate = entry.date; b.paidAmount = entry.amount; b.linkedEntryId = entry.id;
+      b.updatedAt = new Date().toISOString();
+      saveData(); renderBills(); toast(`📃 "${b.category}" বিল পরিশোধিত হিসেবে চিহ্নিত হলো!`);
+    }
   } else if (type === 'shopping') {
     const s = APP_DATA.shopping.find(x => x.id === itemId);
     if (s) { s.bought = true; s.price = entry.amount || s.price; s.expensedEntryId = entry.id; saveData(); renderShopping(); toast(`🛒 "${s.name}" কেনা হয়েছে হিসেবে চিহ্নিত হলো!`); }
@@ -2986,6 +3210,7 @@ function updateEntryLinkItemOptions() {
 
   wrap.style.display = 'block';
   let items = [];
+  if (type === 'bill')     items = APP_DATA.bills.filter(b => b.status !== 'paid' && b.month === currentYM()).map(b => ({ id:b.id, label:`${(billCatById(b.categoryId)||{}).icon||'📃'} ${b.category}`, est:b.amount||null }));
   if (type === 'task')     items = APP_DATA.tasks.filter(t => !t.done).map(t => ({ id:t.id, label:t.text, est:null }));
   if (type === 'shopping') items = APP_DATA.shopping.filter(s => !s.bought).map(s => ({ id:s.id, label:s.name + (s.qty?` (${s.qty})`:''), est:s.price||null }));
   if (type === 'project')  items = APP_DATA.projects.filter(p => p.status !== 'completed').map(p => ({ id:p.id, label:p.name, est:p.budget||null }));
@@ -3000,6 +3225,19 @@ function updateEntryLinkItemOptions() {
   hint.textContent = '';
   sel.onchange = () => {
     const picked = items.find(it => it.id === sel.value);
+    if (type === 'bill') {
+      const b = APP_DATA.bills.find(x => x.id === sel.value);
+      if (b) {
+        document.getElementById('entryAmount').value   = b.amount || '';
+        document.getElementById('entryCategory').value = b.category || '';
+        document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
+        document.getElementById('entryPayment').value  = b.payment || 'Cash';
+        document.getElementById('entryNote').value     = b.note || b.category || '';
+        updateEntryPreview();
+        hint.textContent = 'বিলের তথ্য স্বয়ংক্রিয়ভাবে বসানো হয়েছে — চাইলে এডিট করো।';
+      }
+      return;
+    }
     hint.textContent = (picked && picked.est) ? `আনুমানিক খরচ: ৳ ${picked.est.toLocaleString()} — শুধু সাজেশন, Amount ফিল্ডে নিজে থেকে দিতে হবে।` : '';
   };
 }
@@ -3470,7 +3708,8 @@ async function saveProject() {
     costs:existing?.costs||[],
     driveFileId:   driveFileId   || existing?.driveFileId   || null,
     driveFileName: driveFileName || existing?.driveFileName || null,
-    createdAt:existing?.createdAt||new Date().toISOString()
+    createdAt:existing?.createdAt||new Date().toISOString(),
+    updatedAt:new Date().toISOString()
   };
   if (editingProjectId) { const i=APP_DATA.projects.findIndex(p=>p.id===editingProjectId); if(i>-1) APP_DATA.projects[i]=proj; }
   else APP_DATA.projects.unshift(proj);
@@ -3696,14 +3935,15 @@ async function saveTask() {
     done:existing?.done||false,
     driveFileId:   driveFileId   || existing?.driveFileId   || null,
     driveFileName: driveFileName || existing?.driveFileName || null,
-    createdAt:new Date().toISOString()};
+    createdAt:existing?.createdAt||new Date().toISOString(),
+    updatedAt:new Date().toISOString()};
   if(editingTaskId){const i=APP_DATA.tasks.findIndex(t=>t.id===editingTaskId);if(i>-1)APP_DATA.tasks[i]=task;}
   else APP_DATA.tasks.unshift(task);
   saveData(); closeModal('taskModal'); renderTasks(); pushDataToBackend(); toast('Task সংরক্ষণ হয়েছে!');
 }
 
 function toggleTask(id) {
-  const t=APP_DATA.tasks.find(x=>x.id===id); if(t){t.done=!t.done;saveData();renderTasks();renderDashboard();pushDataToBackend();}
+  const t=APP_DATA.tasks.find(x=>x.id===id); if(t){t.done=!t.done;t.updatedAt=new Date().toISOString();saveData();renderTasks();renderDashboard();pushDataToBackend();}
 }
 
 function deleteTask(id) {
@@ -3771,7 +4011,9 @@ async function saveShopItem() {
     bought:existing?.bought||false,
     expensedEntryId: existing?.expensedEntryId||null,
     driveFileId:   driveFileId   || existing?.driveFileId   || null,
-    driveFileName: driveFileName || existing?.driveFileName || null};
+    driveFileName: driveFileName || existing?.driveFileName || null,
+    createdAt:existing?.createdAt||new Date().toISOString(),
+    updatedAt:new Date().toISOString()};
   if(editingShopId){const i=APP_DATA.shopping.findIndex(s=>s.id===editingShopId);if(i>-1)APP_DATA.shopping[i]=item;}
   else APP_DATA.shopping.unshift(item);
   editingShopId=null; saveData(); closeModal('shopModal'); renderShopping(); pushDataToBackend(); toast('Item যোগ হয়েছে!');
@@ -3780,6 +4022,7 @@ async function saveShopItem() {
 function toggleBought(id) {
   const s=APP_DATA.shopping.find(x=>x.id===id); if(!s) return;
   s.bought=!s.bought;
+  s.updatedAt=new Date().toISOString();
   saveData(); renderShopping(); pushDataToBackend();
   // First time an item with a price is marked bought, offer to log it as
   // a Finance expense too (guarded by expensedEntryId so it never double-counts).
@@ -4099,6 +4342,308 @@ function addDocCategory() {
 function removeDocCategory(i) {
   secureConfirm(`"${CONFIG.docCategories[i]}" ক্যাটাগরি মুছবেন?`,()=>{
     CONFIG.docCategories.splice(i,1); saveConfig(); renderDocCatManage(); renderDocs();
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// BILLS
+// Recurring monthly bill categories (CONFIG.billCategories) auto-spawn
+// one Pending "bill instance" (APP_DATA.bills) per category per month,
+// as soon as the app is opened in that month. Marking one Paid hands
+// off to the normal Entry → Preview → Save flow (via the same
+// entryLinkType/entryLinkItem mechanism Task/Shopping/Project/Document
+// already use), so a paid bill always becomes a real Finance entry too.
+// ══════════════════════════════════════════════════════════
+const BILL_ICON_CHOICES = ['✅','✔️','❎','📃','💰','🌐','💵','☺️','⚡','🛜','⛽','🚰','💡','👩\u200d🍳','💳'];
+
+function currentYM() { return today().slice(0,7); }
+
+function billCatById(id) { return (CONFIG.billCategories||[]).find(c=>c.id===id); }
+
+/** Creates this month's Pending bill instance for every category that
+ *  doesn't already have one — deterministic id (category+month) means
+ *  running this on every device/every load is always safe, never
+ *  creates duplicates, and merges cleanly through the same
+ *  id-based sync as tasks/shopping/docs. */
+function generateMonthlyBills() {
+  const ym = currentYM();
+  let changed = false;
+  (CONFIG.billCategories||[]).forEach(cat => {
+    const instId = `bill_${cat.id}_${ym}`;
+    if (APP_DATA.bills.some(b => b.id === instId)) return;
+    let dueDate = '';
+    if (cat.defaultDueDay) {
+      const day = Math.min(31, Math.max(1, parseInt(cat.defaultDueDay,10)||1));
+      const d = new Date(ym + '-01T00:00:00');
+      d.setMonth(d.getMonth()+1, 0); // last day of month, to clamp
+      const lastDay = d.getDate();
+      dueDate = `${ym}-${String(Math.min(day,lastDay)).padStart(2,'0')}`;
+    }
+    APP_DATA.bills.push({
+      id: instId, categoryId: cat.id, category: cat.name, month: ym,
+      amount: cat.defaultAmount||0, member: cat.defaultMember||(CONFIG.members[0]||''),
+      payment: cat.defaultPayment||'Cash', note: cat.defaultNote||'',
+      dueDate, status: 'pending', paidDate: null, paidAmount: null, linkedEntryId: null,
+      createdAt: new Date().toISOString()
+    });
+    changed = true;
+  });
+  if (changed) saveData();
+  return changed;
+}
+
+function renderBills() {
+  generateMonthlyBills();
+  const ym = currentYM();
+  document.getElementById('billsMonthLabel').textContent = ym;
+  const monthBills = APP_DATA.bills.filter(b=>b.month===ym)
+    .sort((a,b) => {
+      const ia = (CONFIG.billCategories||[]).findIndex(c=>c.id===a.categoryId);
+      const ib = (CONFIG.billCategories||[]).findIndex(c=>c.id===b.categoryId);
+      return (ia<0?999:ia) - (ib<0?999:ib);
+    });
+
+  const todayStr = today();
+  const pending  = monthBills.filter(b=>b.status==='pending');
+  const overdue  = pending.filter(b=>b.dueDate && b.dueDate < todayStr);
+  const paid     = monthBills.filter(b=>b.status==='paid');
+  const pendingAmt = pending.reduce((s,b)=>s+(b.amount||0),0);
+  const paidAmt     = paid.reduce((s,b)=>s+(b.paidAmount||b.amount||0),0);
+
+  document.getElementById('bill-total').textContent    = monthBills.length;
+  document.getElementById('bill-pending').textContent  = pending.length;
+  document.getElementById('bill-pending-amt').textContent = fmtBDT(pendingAmt);
+  document.getElementById('bill-overdue').textContent  = overdue.length;
+  document.getElementById('bill-paid').textContent     = paid.length;
+  document.getElementById('bill-paid-amt').textContent = fmtBDT(paidAmt);
+
+  const badge = document.getElementById('billsNotifBadge');
+  if (badge) {
+    if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
+  }
+
+  const div = document.getElementById('billsList');
+  if (!monthBills.length) {
+    div.innerHTML = '<div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>🏷️ ক্যাটাগরি ম্যানেজ থেকে Bill ক্যাটাগরি যোগ করো</p></div>';
+    return;
+  }
+  div.innerHTML = monthBills.map(b => {
+    const cat = billCatById(b.categoryId);
+    const icon = cat ? cat.icon : '📃';
+    const isOverdue = b.status==='pending' && b.dueDate && b.dueDate < todayStr;
+    const statusHtml = b.status==='paid'
+      ? `<span class="status-pill status-done">✅ Paid</span>`
+      : isOverdue
+        ? `<span class="status-pill status-overdue">❎ Overdue</span>`
+        : `<span class="status-pill status-active">⏳ Pending</span>`;
+    const dueHtml = b.dueDate ? `<span class="en">Due: ${b.dueDate}</span>` : '';
+    const noteHtml = b.note ? `<span>📝 ${b.note}</span>` : '';
+    const paidInfo = b.status==='paid' ? `<span class="en">Paid: ${b.paidDate||''}</span>` : '';
+    const actions = b.status==='paid'
+      ? `<button class="btn btn-ghost btn-xs" onclick="undoBillPaid('${b.id}')" title="আবার Pending করো">↩️ Undo</button>`
+      : `<button class="btn-icon" onclick="openBillInstanceModal('${b.id}')" title="সম্পাদনা">✏️</button>
+         <button class="btn btn-primary btn-xs" onclick="payBillNow('${b.id}')">✅ পরিশোধ করুন</button>
+         <button class="btn-icon danger" onclick="deleteBillInstance('${b.id}')" title="মুছুন">🗑</button>`;
+    return `<div class="bill-card ${b.status==='paid'?'is-paid':''} ${isOverdue?'is-overdue':''}">
+      <div class="bill-icon-box">${icon}</div>
+      <div class="bill-main">
+        <div class="bill-name">${b.category}</div>
+        <div class="bill-meta">${statusHtml}${dueHtml}${paidInfo}${noteHtml}</div>
+      </div>
+      <div class="bill-amount">${fmtBDT(b.amount)}</div>
+      <div class="bill-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Edit this month's bill instance (amount/date/member/payment/note) ──
+function openBillInstanceModal(id) {
+  const b = APP_DATA.bills.find(x=>x.id===id); if (!b) return;
+  editingBillId = id;
+  const cat = billCatById(b.categoryId);
+  document.getElementById('billInstanceModalTitle').textContent = `✏️ ${cat?cat.icon:'📃'} ${b.category} সম্পাদনা`;
+  document.getElementById('biAmount').value   = b.amount || '';
+  document.getElementById('biDueDate').value  = b.dueDate || '';
+  document.getElementById('biNote').value     = b.note || '';
+  document.getElementById('biPayment').value  = b.payment || 'Cash';
+  const memSel = document.getElementById('biMember');
+  memSel.innerHTML = CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
+  memSel.value = b.member || CONFIG.members[0] || '';
+  openModal('billInstanceModal');
+}
+
+function saveBillInstance() {
+  const b = APP_DATA.bills.find(x=>x.id===editingBillId); if (!b) return;
+  const amount = parseFloat(document.getElementById('biAmount').value) || 0;
+  b.amount   = amount;
+  b.dueDate  = document.getElementById('biDueDate').value || '';
+  b.member   = document.getElementById('biMember').value;
+  b.payment  = document.getElementById('biPayment').value;
+  b.note     = document.getElementById('biNote').value.trim();
+  b.updatedAt = new Date().toISOString();
+  saveData(); closeModal('billInstanceModal'); renderBills(); pushDataToBackend();
+  toast('📃 Bill তথ্য সংরক্ষণ হয়েছে!');
+}
+
+function deleteBillInstance(id) {
+  secureConfirm('এই মাসের bill entry-টি মুছবেন?', ()=>{
+    APP_DATA.bills = APP_DATA.bills.filter(b=>b.id!==id);
+    saveData(); renderBills(); pushDataToBackend();
+    toast('Bill মুছে গেছে','warning');
+  });
+}
+
+// ── Mark Paid: hands off to the Entry tab, pre-filled, via the
+//    existing entryLinkType='bill' mechanism ──
+function payBillNow(id) {
+  const b = APP_DATA.bills.find(x=>x.id===id); if (!b || b.status!=='pending') return;
+  switchTab('entry');
+  setTimeout(() => {
+    setEntryType('expense', document.querySelector('.entry-type-btn.expense'));
+    document.getElementById('entryAmount').value   = b.amount || '';
+    document.getElementById('entryCategory').value = b.category || '';
+    document.getElementById('entryDate').value     = today();
+    document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
+    document.getElementById('entryPayment').value  = b.payment || 'Cash';
+    document.getElementById('entryNote').value     = b.note || b.category || '';
+    updateEntryPreview();
+    const linkType = document.getElementById('entryLinkType');
+    if (linkType) {
+      linkType.value = 'bill';
+      updateEntryLinkItemOptions();
+      const linkItem = document.getElementById('entryLinkItem');
+      if (linkItem) linkItem.value = b.id;
+    }
+    toast(`📃 "${b.category}" বিলের তথ্য বসানো হয়েছে — চেক করে Preview & Save করো`);
+    document.getElementById('entryAmount').focus();
+  }, 250);
+}
+
+function undoBillPaid(id) {
+  secureConfirm('এই bill-টি আবার Pending করবেন? (Finance-এ সংরক্ষিত এন্ট্রিটি অপরিবর্তিত থাকবে — প্রয়োজনে Finance/History ট্যাব থেকে আলাদাভাবে মুছতে পারো)', ()=>{
+    const b = APP_DATA.bills.find(x=>x.id===id); if (!b) return;
+    b.status = 'pending'; b.paidDate = null; b.paidAmount = null; b.linkedEntryId = null;
+    b.updatedAt = new Date().toISOString();
+    saveData(); renderBills(); pushDataToBackend();
+    toast('বিল আবার Pending করা হয়েছে','warning');
+  });
+}
+
+// ── BILL CATEGORY MANAGEMENT ──
+function openManageBillCategoriesModal() {
+  renderBillCatManage();
+  openModal('manageBillCategoriesModal');
+}
+
+function renderBillCatManage() {
+  const el = document.getElementById('billCatManage');
+  el.innerHTML = `<div class="manage-chip-list">` + CONFIG.billCategories.map((c,i)=>`
+    <div class="manage-chip sortable-chip" draggable="true" data-idx="${i}" style="padding:8px 8px 8px 12px">
+      <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
+      <span style="font-size:16px">${c.icon||'📃'}</span>
+      <div class="bill-cat-chip-info">
+        <span>${c.name}</span>
+        <span class="bcc-sub en">${c.financeCategory} · ৳${(c.defaultAmount||0).toLocaleString()}</span>
+      </div>
+      <div class="mc-actions">
+        <button class="edit" title="সম্পাদনা" onclick="openBillCategoryModal('${c.id}')">✏️</button>
+        <button class="del" title="মুছুন" onclick="deleteBillCategory('${c.id}')">✕</button>
+      </div>
+    </div>`).join('') + `</div>`;
+  wireChipDragDrop(el, (from,to) => {
+    reorderArray(CONFIG.billCategories, from, to);
+    saveConfig(); renderBillCatManage(); pushDataToBackend();
+  });
+}
+
+function financeCategoryOptionsHTML(selected) {
+  return CONFIG.categories.expense.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('')
+    + `<option value="__new__" ${selected==='__new__'?'selected':''}>➕ নতুন ক্যাটাগরি লিখুন</option>`;
+}
+
+function renderBillIconPicker() {
+  const row = document.getElementById('billIconPickRow');
+  row.innerHTML = BILL_ICON_CHOICES.map(e=>`<button type="button" class="emoji-pick-btn ${pickedBillCatIcon===e?'active':''}" onclick="pickBillCatIcon('${e}')">${e}</button>`).join('');
+}
+
+function pickBillCatIcon(icon) {
+  pickedBillCatIcon = icon;
+  document.getElementById('bcIconInput').value = icon;
+  renderBillIconPicker();
+}
+
+function openBillCategoryModal(id) {
+  editingBillCatId = id || null;
+  const cat = id ? billCatById(id) : null;
+  document.getElementById('billCategoryModalTitle').textContent = id ? '✏️ Bill ক্যাটাগরি সম্পাদনা' : '📃 নতুন Bill ক্যাটাগরি';
+  pickedBillCatIcon = cat ? (cat.icon||'📃') : '📃';
+  document.getElementById('bcIconInput').value = pickedBillCatIcon;
+  renderBillIconPicker();
+  document.getElementById('bcName').value   = cat ? cat.name : '';
+  document.getElementById('bcAmount').value = cat ? (cat.defaultAmount||'') : '';
+  document.getElementById('bcNote').value   = cat ? (cat.defaultNote||'') : '';
+  document.getElementById('bcDueDay').value = cat ? (cat.defaultDueDay||'') : '';
+  document.getElementById('bcPayment').value = cat ? (cat.defaultPayment||'Cash') : 'Cash';
+  const finSel = document.getElementById('bcFinanceCategory');
+  finSel.innerHTML = financeCategoryOptionsHTML(cat ? cat.financeCategory : '');
+  document.getElementById('bcNewFinCatWrap').style.display = 'none';
+  document.getElementById('bcNewFinCat').value = '';
+  const memSel = document.getElementById('bcMember');
+  memSel.innerHTML = '<option value="">— নির্দিষ্ট নয় —</option>' + CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
+  memSel.value = cat ? (cat.defaultMember||'') : '';
+  openModal('billCategoryModal');
+}
+
+function saveBillCategory() {
+  const name = document.getElementById('bcName').value.trim();
+  if (!name) { toast('ক্যাটাগরির নাম দিন','warning'); return; }
+  let financeCategory = document.getElementById('bcFinanceCategory').value;
+  if (financeCategory === '__new__') {
+    financeCategory = document.getElementById('bcNewFinCat').value.trim();
+    if (!financeCategory) { toast('নতুন Finance ক্যাটাগরির নাম দিন','warning'); return; }
+    if (!CONFIG.categories.expense.includes(financeCategory)) CONFIG.categories.expense.push(financeCategory);
+  }
+  const cat = {
+    id: editingBillCatId || uid(),
+    name, icon: pickedBillCatIcon || '📃',
+    financeCategory,
+    defaultAmount: parseFloat(document.getElementById('bcAmount').value) || 0,
+    defaultMember: document.getElementById('bcMember').value,
+    defaultPayment: document.getElementById('bcPayment').value,
+    defaultNote: document.getElementById('bcNote').value.trim(),
+    defaultDueDay: parseInt(document.getElementById('bcDueDay').value,10) || null
+  };
+  if (editingBillCatId) {
+    const idx = CONFIG.billCategories.findIndex(c=>c.id===editingBillCatId);
+    if (idx > -1) {
+      const oldName = CONFIG.billCategories[idx].name;
+      CONFIG.billCategories[idx] = cat;
+      if (oldName !== name) {
+        APP_DATA.bills.forEach(b => { if (b.categoryId === cat.id) b.category = name; });
+        saveData();
+      }
+    }
+  } else {
+    CONFIG.billCategories.push(cat);
+  }
+  saveConfig();
+  closeModal('billCategoryModal');
+  renderBillCatManage();
+  if (document.getElementById('tab-bills').classList.contains('active')) renderBills();
+  pushDataToBackend();
+  toast(editingBillCatId ? 'ক্যাটাগরি আপডেট হয়েছে!' : 'নতুন Bill ক্যাটাগরি যোগ হয়েছে!');
+  editingBillCatId = null;
+}
+
+function deleteBillCategory(id) {
+  const cat = billCatById(id); if (!cat) return;
+  secureConfirm(`"${cat.name}" Bill ক্যাটাগরি মুছবেন? (এই মাসের আগের bill entries অপরিবর্তিত থাকবে, শুধু ভবিষ্যতে নতুন Pending bill তৈরি হবে না)`, ()=>{
+    CONFIG.billCategories = CONFIG.billCategories.filter(c=>c.id!==id);
+    saveConfig(); renderBillCatManage();
+    if (document.getElementById('tab-bills').classList.contains('active')) renderBills();
+    pushDataToBackend();
+    toast('Bill ক্যাটাগরি মুছে গেছে','warning');
   });
 }
 
@@ -4436,7 +4981,7 @@ function pushDataToBackend() {
     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({
       entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
-      shopping:APP_DATA.shopping, docs:APP_DATA.docs
+      shopping:APP_DATA.shopping, docs:APP_DATA.docs, bills:APP_DATA.bills
     })
   }).catch(()=>{});
 }
@@ -4476,7 +5021,8 @@ function performSafeSync(onDone, onError) {
     projects: APP_DATA.projects,
     tasks:    APP_DATA.tasks,
     shopping: APP_DATA.shopping,
-    docs:     APP_DATA.docs
+    docs:     APP_DATA.docs,
+    bills:    APP_DATA.bills
   };
   pullDataFromBackend(() => {
     pushMissingLocalItems(localSnapshot).then(() => {
@@ -4485,51 +5031,54 @@ function performSafeSync(onDone, onError) {
   });
 }
 
-/** Merge two arrays of {id,...} items by id — canonical items win, and
- *  any local-only item (an id the canonical array doesn't have) is kept. */
-function mergeById(canonicalArr, localArr) {
+/** Merge two arrays of {id,...} items by id, timestamp-aware:
+ *  - an id present in only one array is always kept
+ *  - an id present in BOTH is resolved by comparing (updatedAt||createdAt) —
+ *    whichever copy is actually newer wins, so an edit made on one device
+ *    is never silently discarded just because the Sheet's copy is older. */
+function mergeByIdTimestamped(canonicalArr, localArr) {
   const map = new Map();
   (canonicalArr || []).forEach(item => { if (item && item.id != null) map.set(String(item.id), item); });
-  (localArr || []).forEach(item => { if (item && item.id != null && !map.has(String(item.id))) map.set(String(item.id), item); });
+  (localArr || []).forEach(item => {
+    if (!item || item.id == null) return;
+    const key = String(item.id);
+    const existing = map.get(key);
+    if (!existing) { map.set(key, item); return; }
+    const localTime     = new Date(item.updatedAt || item.createdAt || 0).getTime();
+    const canonicalTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+    if (localTime > canonicalTime) map.set(key, item);
+  });
   return Array.from(map.values());
 }
 
 /** After APP_DATA has just been replaced with the Sheet's canonical data
- *  (via pullDataFromBackend), add back anything that only existed in the
- *  pre-pull local snapshot (e.g. entries made on this device while
- *  offline) and push those additions up — as ADDITIONS, never as a
- *  wholesale overwrite. */
+ *  (via pullDataFromBackend), merge back in this device's pre-pull local
+ *  snapshot — timestamp-aware, so: a brand-new local-only item is kept,
+ *  and an item edited on this device with a newer timestamp than the
+ *  Sheet's copy wins too (instead of the Sheet's older copy silently
+ *  overwriting a real edit). The merged result is then pushed up as one
+ *  full sync — an addition/update, never a data-loss overwrite. */
 function pushMissingLocalItems(localSnapshot) {
   if (!CONFIG.webAppUrl) return Promise.resolve();
 
-  // Entries: append only what the Sheet is missing, via the safe
-  // single-row addEntry endpoint (append, never overwrite).
-  const sheetEntryIds = new Set(APP_DATA.entries.map(e => String(e.id)));
-  const missingEntries = (localSnapshot.entries || []).filter(e => !sheetEntryIds.has(String(e.id)));
-  if (missingEntries.length) {
-    APP_DATA.entries = [...missingEntries, ...APP_DATA.entries]
-      .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
-  }
+  const beforeJSON = JSON.stringify({
+    entries: APP_DATA.entries, projects: APP_DATA.projects, tasks: APP_DATA.tasks,
+    shopping: APP_DATA.shopping, docs: APP_DATA.docs, bills: APP_DATA.bills
+  });
 
-  // Projects / Tasks / Shopping / Docs: merge in local-only items (by id)
-  // that the Sheet doesn't have yet.
-  const mergedProjects = mergeById(APP_DATA.projects, localSnapshot.projects);
-  const mergedTasks    = mergeById(APP_DATA.tasks,    localSnapshot.tasks);
-  const mergedShopping = mergeById(APP_DATA.shopping, localSnapshot.shopping);
-  const mergedDocs     = mergeById(APP_DATA.docs,     localSnapshot.docs);
+  APP_DATA.entries  = mergeByIdTimestamped(APP_DATA.entries,  localSnapshot.entries)
+                         .sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+  APP_DATA.projects = mergeByIdTimestamped(APP_DATA.projects, localSnapshot.projects);
+  APP_DATA.tasks    = mergeByIdTimestamped(APP_DATA.tasks,    localSnapshot.tasks);
+  APP_DATA.shopping = mergeByIdTimestamped(APP_DATA.shopping, localSnapshot.shopping);
+  APP_DATA.docs     = mergeByIdTimestamped(APP_DATA.docs,     localSnapshot.docs);
+  APP_DATA.bills    = mergeByIdTimestamped(APP_DATA.bills,    localSnapshot.bills || []);
 
-  const changed = missingEntries.length > 0 ||
-    mergedProjects.length !== APP_DATA.projects.length ||
-    mergedTasks.length    !== APP_DATA.tasks.length    ||
-    mergedShopping.length !== APP_DATA.shopping.length ||
-    mergedDocs.length     !== APP_DATA.docs.length;
-
-  APP_DATA.projects = mergedProjects;
-  APP_DATA.tasks    = mergedTasks;
-  APP_DATA.shopping = mergedShopping;
-  APP_DATA.docs     = mergedDocs;
-
-  if (!changed) return Promise.resolve();
+  const afterJSON = JSON.stringify({
+    entries: APP_DATA.entries, projects: APP_DATA.projects, tasks: APP_DATA.tasks,
+    shopping: APP_DATA.shopping, docs: APP_DATA.docs, bills: APP_DATA.bills
+  });
+  if (beforeJSON === afterJSON) return Promise.resolve();
 
   saveData();
   renderDashboard(); renderRecentEntries();
@@ -4537,11 +5086,13 @@ function pushMissingLocalItems(localSnapshot) {
   if (typeof renderTasks === 'function') renderTasks();
   if (typeof renderShopping === 'function') renderShopping();
   if (typeof renderDocs === 'function') renderDocs();
+  if (typeof renderBills === 'function') renderBills();
 
   // APP_DATA now holds canonical-Sheet-data + this device's local-only
-  // additions merged in (never a subset of what the Sheet already had),
-  // so a single bulk push of the whole merged set is safe here — it adds
-  // what was missing without ever dropping what other devices saved.
+  // additions/newer-edits merged in (never a subset of what the Sheet
+  // already had), so a single bulk push of the whole merged set is safe
+  // here — it adds/updates what was missing without ever dropping what
+  // other devices saved.
   return pushDataToBackend();
 }
 
@@ -4571,6 +5122,7 @@ function pullDataFromBackend(onDone) {
         if (Array.isArray(d.tasks))    APP_DATA.tasks    = d.tasks;
         if (Array.isArray(d.shopping)) APP_DATA.shopping = d.shopping;
         if (Array.isArray(d.docs))     APP_DATA.docs     = d.docs;
+        if (Array.isArray(d.bills))    APP_DATA.bills    = d.bills;
         saveData();
         // Re-render whatever might currently be visible
         renderDashboard(); renderRecentEntries();
@@ -4578,6 +5130,7 @@ function pullDataFromBackend(onDone) {
         if (typeof renderTasks === 'function') renderTasks();
         if (typeof renderShopping === 'function') renderShopping();
         if (typeof renderDocs === 'function') renderDocs();
+        if (typeof renderBills === 'function') { generateMonthlyBills(); renderBills(); }
         if (typeof renderHistory === 'function' && document.getElementById('tab-history')?.classList.contains('active')) renderHistory();
       }
       if (typeof onDone === 'function') onDone();
@@ -4602,6 +5155,8 @@ function initApp() {
   });
   populateProjectCategorySelects();
   populateDocCategorySelects();
+  generateMonthlyBills();
+  renderBills();
   // Restore custom tabs from config
   CONFIG.customTabs.forEach(tab=>addCustomTabToDOM(tab));
   renderDashboard();
