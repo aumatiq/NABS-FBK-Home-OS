@@ -769,19 +769,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .settings-row-info { flex:1; }
 .settings-row-label { font-size:14px; font-weight:600; }
 .settings-row-desc { font-size:12px; color:var(--sil); margin-top:2px; }
-.member-chip { display:inline-flex; align-items:center; gap:8px; background:var(--blk3); border:1px solid var(--bd); border-radius:20px; padding:6px 6px 6px 10px; font-size:13px; margin:4px; cursor:grab; user-select:none; transition:opacity 0.15s, border-color 0.15s, box-shadow 0.15s; }
-.member-chip .drag-handle { color:var(--sil2); font-size:13px; line-height:1; cursor:grab; }
-.member-chip.dragging { opacity:0.35; }
-.member-chip.drag-over { border-color:var(--ind); box-shadow:0 0 0 2px rgba(79,70,229,0.25); }
-.member-chip.is-default { border-color:var(--gold); box-shadow:0 0 0 1px rgba(245,166,35,0.3); }
-.member-chip .mc-actions { display:flex; gap:2px; margin-left:2px; }
-.member-chip .mc-actions button { background:none; border:none; cursor:pointer; color:var(--sil2); font-size:12px; width:22px; height:22px; border-radius:6px; }
-.member-chip .mc-actions button:hover { background:rgba(79,70,229,0.2); color:var(--wht); }
-.member-chip .mc-actions button.del:hover { background:rgba(239,68,68,0.2); color:var(--red); }
-.member-chip .mc-actions button.edit:hover { background:rgba(245,166,35,0.18); color:var(--gold); }
-.member-chip .mc-actions button.star { color:var(--sil2); }
-.member-chip .mc-actions button.star.is-active { color:var(--gold); }
-.member-chip .mc-actions button.star:hover { background:rgba(245,166,35,0.18); color:var(--gold); }
+.member-chip { display:inline-flex; align-items:center; gap:8px; background:var(--blk3); border:1px solid var(--bd); border-radius:20px; padding:6px 12px; font-size:13px; margin:4px; }
 .member-avatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; background:linear-gradient(135deg,var(--ind),var(--ind2)); color:#fff; flex-shrink:0; }
 
 .budget-bar-item { margin-bottom:12px; }
@@ -1722,7 +1710,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="settings-section">
       <h3>👨‍👩‍👧 পরিবারের সদস্য</h3>
       <div class="card">
-        <p class="settings-row-desc" style="margin-bottom:10px">টেনে (drag) ক্রম বদলান · ✏️ নাম পরিবর্তন · ★ চাপলে সেটি এই ডিভাইসের ডিফল্ট সদস্য হবে (শুধু এই ডিভাইসে প্রযোজ্য, ফর্মে স্বয়ংক্রিয়ভাবে প্রি-সিলেক্ট থাকবে — চাইলে বদলানো যাবে)</p>
         <div id="memberList" style="margin-bottom:14px"></div>
         <div style="display:flex;gap:8px">
           <input type="text" class="form-input" id="newMemberInput" placeholder="সদস্যের নাম" style="max-width:200px">
@@ -3315,7 +3302,7 @@ function updateEntryLinkItemOptions() {
       if (b) {
         document.getElementById('entryAmount').value   = b.amount || '';
         document.getElementById('entryCategory').value = b.category || '';
-        document.getElementById('entryMember').value   = b.member || getDeviceDefaultMember();
+        document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
         document.getElementById('entryPayment').value  = b.payment || 'Cash';
         document.getElementById('entryNote').value     = b.note || b.category || '';
         updateEntryPreview();
@@ -3826,7 +3813,7 @@ function saveCost() {
   // (this is what makes project costs show up in Dashboard totals too).
   openExternalExpenseConfirm({
     amount, category: 'অন্যান্য', date,
-    member: getDeviceDefaultMember(), payment: 'Cash',
+    member: (CONFIG.members && CONFIG.members[0]) || '', payment: 'Cash',
     note: `🔨 প্রজেক্ট খরচ — ${proj.name}: ${name}`
   }, (entry) => {
     if (!proj.costs) proj.costs=[];
@@ -4002,7 +3989,7 @@ function openTaskModal(id) {
     showExistingMiniFile('task', t.driveFileName);
   } else {
     ['tmText','tmDue','tmNotes'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('tmPriority').value='medium'; document.getElementById('tmMember').value=getDeviceDefaultMember();
+    document.getElementById('tmPriority').value='medium'; document.getElementById('tmMember').value=CONFIG.members[0];
   }
   openModal('taskModal');
 }
@@ -4115,7 +4102,7 @@ function toggleBought(id) {
     const catMap = {Grocery:'বাজার', Household:'অন্যান্য', Clothing:'পোশাক', Electronics:'অন্যান্য', Medicine:'ওষুধ', Other:'অন্যান্য'};
     openExternalExpenseConfirm({
       amount: s.price, category: catMap[s.category] || 'অন্যান্য', date: today(),
-      member: getDeviceDefaultMember(), payment: 'Cash',
+      member: (CONFIG.members && CONFIG.members[0]) || '', payment: 'Cash',
       note: `🛒 কেনাকাটা — ${s.name}${s.qty ? ' ('+s.qty+')' : ''}`
     }, (entry) => {
       s.expensedEntryId = entry.id;
@@ -4466,7 +4453,7 @@ function generateMonthlyBills() {
     }
     APP_DATA.bills.push({
       id: instId, categoryId: cat.id, category: cat.name, month: ym,
-      amount: cat.defaultAmount||0, member: cat.defaultMember||getDeviceDefaultMember(),
+      amount: cat.defaultAmount||0, member: cat.defaultMember||(CONFIG.members[0]||''),
       payment: cat.defaultPayment||'Cash', note: cat.defaultNote||'',
       dueDate, status: 'pending', paidDate: null, paidAmount: null, linkedEntryId: null,
       createdAt: new Date().toISOString()
@@ -4554,7 +4541,7 @@ function openBillInstanceModal(id) {
   document.getElementById('biPayment').value  = b.payment || 'Cash';
   const memSel = document.getElementById('biMember');
   memSel.innerHTML = CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
-  memSel.value = b.member || getDeviceDefaultMember();
+  memSel.value = b.member || CONFIG.members[0] || '';
   openModal('billInstanceModal');
 }
 
@@ -4589,7 +4576,7 @@ function payBillNow(id) {
     document.getElementById('entryAmount').value   = b.amount || '';
     document.getElementById('entryCategory').value = b.category || '';
     document.getElementById('entryDate').value     = today();
-    document.getElementById('entryMember').value   = b.member || getDeviceDefaultMember();
+    document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
     document.getElementById('entryPayment').value  = b.payment || 'Cash';
     document.getElementById('entryNote').value     = b.note || b.category || '';
     updateEntryPreview();
@@ -4835,7 +4822,6 @@ function renderSettings() {
     const sel=document.getElementById(id); if(!sel) return;
     sel.innerHTML=CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
   });
-  applyDeviceDefaultMemberToForms();
 }
 
 function updateBackendStatus() {
@@ -4981,59 +4967,11 @@ function changePasswords() {
   });
 }
 
-// ══════════════════════════════════════════════════════════
-// PER-DEVICE DEFAULT MEMBER
-// Which family member uses THIS device — stored only in this device's
-// localStorage, never synced to Google Sheets/other devices. Used to
-// auto-prefill the "member" select in Entry, Tasks, and Bills forms.
-// ══════════════════════════════════════════════════════════
-const DEVICE_DEFAULT_MEMBER_KEY = 'nabsfbk_device_default_member';
-function getDeviceDefaultMember() {
-  try {
-    const saved = localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY);
-    if (saved && CONFIG.members.includes(saved)) return saved;
-  } catch(e) {}
-  return (CONFIG.members && CONFIG.members[0]) || '';
-}
-function setDeviceDefaultMember(name) {
-  try { localStorage.setItem(DEVICE_DEFAULT_MEMBER_KEY, name); } catch(e) {}
-  renderMemberList();
-  applyDeviceDefaultMemberToForms();
-  toast(`★ "${name}" এখন এই ডিভাইসের ডিফল্ট সদস্য`);
-}
-// Prefill every "member" select currently in the DOM with this device's
-// default member. Called on init, on Settings render, and whenever the
-// default changes. User can still change the selection per entry.
-function applyDeviceDefaultMemberToForms() {
-  const def = getDeviceDefaultMember();
-  if (!def) return;
-  ['entryMember','tmMember'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if (sel && sel.options.length) sel.value = def;
-  });
-}
-
 function renderMemberList() {
   const div=document.getElementById('memberList');
-  const def = getDeviceDefaultMember();
-  div.innerHTML=CONFIG.members.map((m,i)=>{
-    const esc = m.replace(/'/g,"\\'");
-    const isDef = m===def;
-    return `<div class="member-chip sortable-chip${isDef?' is-default':''}" draggable="true" data-idx="${i}">
-      <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
-      <div class="member-avatar">${m.charAt(0).toUpperCase()}</div>
-      <span>${m}</span>
-      <div class="mc-actions">
-        <button class="star${isDef?' is-active':''}" title="এই ডিভাইসের ডিফল্ট সদস্য বানাও" onclick="setDeviceDefaultMember('${esc}')">${isDef?'★':'☆'}</button>
-        <button class="edit" title="নাম পরিবর্তন" onclick="renameMember(${i})">✏️</button>
-        ${CONFIG.members.length>1?`<button class="del" title="মুছুন" onclick="removeMember(${i})">✕</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-  wireChipDragDrop(div, (from,to)=>{
-    reorderArray(CONFIG.members, from, to);
-    saveConfig(); renderMemberList(); applyDeviceDefaultMemberToForms();
-  });
+  div.innerHTML=CONFIG.members.map((m,i)=>`
+    <div class="member-chip"><div class="member-avatar">${m.charAt(0).toUpperCase()}</div><span>${m}</span>
+    ${CONFIG.members.length>1?`<span style="cursor:pointer;color:var(--sil2);font-size:12px" onclick="removeMember(${i})">✕</span>`:''}</div>`).join('');
 }
 function addMember() {
   const name=document.getElementById('newMemberInput').value.trim();
@@ -5043,43 +4981,8 @@ function addMember() {
 }
 function removeMember(i) {
   secureConfirm(`"${CONFIG.members[i]}" সদস্য মুছবেন?`,()=>{
-    const removedName = CONFIG.members[i];
-    CONFIG.members.splice(i,1); saveConfig();
-    try {
-      if (localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY) === removedName) {
-        localStorage.removeItem(DEVICE_DEFAULT_MEMBER_KEY);
-      }
-    } catch(e) {}
-    renderMemberList(); applyDeviceDefaultMemberToForms();
+    CONFIG.members.splice(i,1); saveConfig(); renderMemberList();
   });
-}
-// Renaming a member cascades to every existing Finance entry, Task, Bill
-// instance, and Bill-category default that referenced the old name — same
-// pattern as renameCategory() below.
-function renameMember(i) {
-  const oldName = CONFIG.members[i];
-  const val = prompt('নতুন নাম দিন:', oldName);
-  if (!val || !val.trim() || val.trim() === oldName) return;
-  const newName = val.trim();
-  if (CONFIG.members.includes(newName)) { toast('এই নাম আগে থেকেই আছে','warning'); return; }
-  CONFIG.members[i] = newName;
-  APP_DATA.entries.forEach(e => { if (e.member === oldName) e.member = newName; });
-  APP_DATA.tasks.forEach(t => { if (t.member === oldName) t.member = newName; });
-  (APP_DATA.bills||[]).forEach(b => { if (b.member === oldName) b.member = newName; });
-  (CONFIG.billCategories||[]).forEach(c => { if (c.defaultMember === oldName) c.defaultMember = newName; });
-  try {
-    if (localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY) === oldName) {
-      localStorage.setItem(DEVICE_DEFAULT_MEMBER_KEY, newName);
-    }
-  } catch(e) {}
-  saveConfig(); saveData();
-  renderMemberList(); applyDeviceDefaultMemberToForms();
-  renderRecentEntries(); renderDashboard();
-  if (typeof renderFinance === 'function') renderFinance();
-  if (typeof renderTasks === 'function') renderTasks();
-  if (typeof renderBills === 'function') renderBills();
-  pushDataToBackend();
-  toast('সদস্যের নাম পরিবর্তন হয়েছে!');
 }
 
 function renderCatList(type,elId) {
@@ -5322,7 +5225,6 @@ function initApp() {
     const sel=document.getElementById(id); if(!sel) return;
     sel.innerHTML=CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
   });
-  applyDeviceDefaultMemberToForms();
   populateProjectCategorySelects();
   populateDocCategorySelects();
   generateMonthlyBills();
