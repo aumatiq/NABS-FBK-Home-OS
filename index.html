@@ -769,7 +769,19 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .settings-row-info { flex:1; }
 .settings-row-label { font-size:14px; font-weight:600; }
 .settings-row-desc { font-size:12px; color:var(--sil); margin-top:2px; }
-.member-chip { display:inline-flex; align-items:center; gap:8px; background:var(--blk3); border:1px solid var(--bd); border-radius:20px; padding:6px 12px; font-size:13px; margin:4px; }
+.member-chip { display:inline-flex; align-items:center; gap:8px; background:var(--blk3); border:1px solid var(--bd); border-radius:20px; padding:6px 6px 6px 10px; font-size:13px; margin:4px; cursor:grab; user-select:none; transition:opacity 0.15s, border-color 0.15s, box-shadow 0.15s; }
+.member-chip .drag-handle { color:var(--sil2); font-size:13px; line-height:1; cursor:grab; }
+.member-chip.dragging { opacity:0.35; }
+.member-chip.drag-over { border-color:var(--ind); box-shadow:0 0 0 2px rgba(79,70,229,0.25); }
+.member-chip.is-default { border-color:var(--gold); box-shadow:0 0 0 1px rgba(245,166,35,0.3); }
+.member-chip .mc-actions { display:flex; gap:2px; margin-left:2px; }
+.member-chip .mc-actions button { background:none; border:none; cursor:pointer; color:var(--sil2); font-size:12px; width:22px; height:22px; border-radius:6px; }
+.member-chip .mc-actions button:hover { background:rgba(79,70,229,0.2); color:var(--wht); }
+.member-chip .mc-actions button.del:hover { background:rgba(239,68,68,0.2); color:var(--red); }
+.member-chip .mc-actions button.edit:hover { background:rgba(245,166,35,0.18); color:var(--gold); }
+.member-chip .mc-actions button.star { color:var(--sil2); }
+.member-chip .mc-actions button.star.is-active { color:var(--gold); }
+.member-chip .mc-actions button.star:hover { background:rgba(245,166,35,0.18); color:var(--gold); }
 .member-avatar { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; background:linear-gradient(135deg,var(--ind),var(--ind2)); color:#fff; flex-shrink:0; }
 
 .budget-bar-item { margin-bottom:12px; }
@@ -1131,6 +1143,13 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
             <div class="gauge-foot">জমা <b id="gaugeSavAmt">৳০</b><br><span style="font-size:10px">এই মাসে</span></div>
           </div>
         </div>
+        <!-- Income budget section — same gauge-item/gauge-canvas-wrap visual
+             language as above, generated dynamically (JS) since income
+             categories are user-configurable. See renderIncomeBudgetGauges(). -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+          <h2 style="font-size:13px;color:var(--sil);margin-bottom:10px">💰 আয়ের বাজেট</h2>
+          <div id="incomeBudgetProgress" class="budget-charts"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -1355,6 +1374,14 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
         <h3 class="en">SAVINGS</h3>
         <div class="amount" id="fin-total-savings">৳ ০</div>
       </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="section-head">
+        <h2 style="font-size:14px">🔓 সঞ্চয় ব্যালেন্স ও ভাঙা</h2>
+        <span class="badge badge-ind en" id="savingsBalanceTotal" style="font-family:var(--font-num);font-variant-numeric:tabular-nums">৳ ০</span>
+      </div>
+      <div id="savingsBalanceList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
 
     <div class="grid-2" style="margin-bottom:20px">
@@ -1710,6 +1737,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="settings-section">
       <h3>👨‍👩‍👧 পরিবারের সদস্য</h3>
       <div class="card">
+        <p class="settings-row-desc" style="margin-bottom:10px">টেনে (drag) ক্রম বদলান · ✏️ নাম পরিবর্তন · ★ চাপলে সেটি এই ডিভাইসের ডিফল্ট সদস্য হবে (শুধু এই ডিভাইসে প্রযোজ্য, ফর্মে স্বয়ংক্রিয়ভাবে প্রি-সিলেক্ট থাকবে — চাইলে বদলানো যাবে)</p>
         <div id="memberList" style="margin-bottom:14px"></div>
         <div style="display:flex;gap:8px">
           <input type="text" class="form-input" id="newMemberInput" placeholder="সদস্যের নাম" style="max-width:200px">
@@ -1962,6 +1990,44 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('costModal')">বাতিল</button>
       <button class="btn btn-primary" onclick="saveCost()">💾 যোগ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAK SAVINGS MODAL -->
+<div class="modal-overlay" id="breakSavingsModal">
+  <div class="modal">
+    <div class="modal-header"><h3>🔓 সঞ্চয় ভাঙো</h3><button class="modal-close" onclick="closeModal('breakSavingsModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">কোন সঞ্চয় ক্যাটাগরি থেকে ভাঙা হচ্ছে?</label>
+        <select class="form-select" id="bsCategory" onchange="updateBreakSavingsBalance()"></select>
+        <p class="settings-row-desc" style="margin-top:6px">বর্তমান ব্যালেন্স: <b id="bsBalanceHint" class="en">৳ ০</b></p>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">পরিমাণ (৳)</label><input type="number" class="form-input" id="bsAmount" min="0" placeholder="০" oninput="updateBreakSavingsPreview()"></div>
+        <div class="form-group"><label class="form-label">তারিখ</label><input type="date" class="form-input" id="bsDate"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">সদস্য</label><select class="form-select" id="bsMember"></select></div>
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <select class="form-select" id="bsPayment">
+            <option value="Cash">💵 Cash</option>
+            <option value="bKash">📱 bKash</option>
+            <option value="Nagad">📱 Nagad</option>
+            <option value="Rocket">📱 Rocket</option>
+            <option value="Bank">🏦 Bank Transfer</option>
+            <option value="Card">💳 Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">নোট (ঐচ্ছিক)</label><input type="text" class="form-input" id="bsNote" placeholder="যেমন: জরুরি প্রয়োজনে ভাঙা হলো"></div>
+      <div id="bsPreview" style="margin-top:10px;padding:10px 12px;background:var(--blk3);border-radius:var(--r2);font-size:12px;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('breakSavingsModal')">বাতিল</button>
+      <button class="btn btn-primary" onclick="confirmBreakSavings()">✅ ভাঙো ও আয় এন্ট্রি যোগ করো</button>
     </div>
   </div>
 </div>
@@ -2440,6 +2506,16 @@ if (!Array.isArray(CONFIG.billCategories)) {
 ensureBillCategoryFinanceCategories();
 if (!Array.isArray(APP_DATA.bills)) {
   APP_DATA.bills = [];
+}
+
+// ── BREAK-SAVINGS FEATURE: dedicated income category ──
+// Withdrawals from savings are recorded as an income entry in this
+// specific category (kept separate from normal income categories like
+// বেতন/ফ্রিল্যান্স, and from the savings categories list, so the two
+// domains never mix and Search-by-category never leaks across types).
+const BREAK_SAVINGS_INCOME_CATEGORY = 'সঞ্চয় থেকে ভাঙা';
+if (!CONFIG.categories.income.includes(BREAK_SAVINGS_INCOME_CATEGORY)) {
+  CONFIG.categories.income.push(BREAK_SAVINGS_INCOME_CATEGORY);
 }
 
 // ── ONE-TIME CLEANUP: collapse duplicate Bill instances left over from ──
@@ -3302,7 +3378,7 @@ function updateEntryLinkItemOptions() {
       if (b) {
         document.getElementById('entryAmount').value   = b.amount || '';
         document.getElementById('entryCategory').value = b.category || '';
-        document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
+        document.getElementById('entryMember').value   = b.member || getDeviceDefaultMember();
         document.getElementById('entryPayment').value  = b.payment || 'Cash';
         document.getElementById('entryNote').value     = b.note || b.category || '';
         updateEntryPreview();
@@ -3419,6 +3495,68 @@ function makeGaugeChart(canvasId, pct, color) {
   });
 }
 
+// Renders the income budget section on the Dashboard: one overall
+// "income vs goal" gauge (mirrors gaugeExpense's format exactly — actual
+// vs CONFIG.goalIncome), plus one small gauge per income category showing
+// that category's share of this month's total income. Uses the exact
+// same .gauge-item / .gauge-canvas-wrap markup as the expense/savings
+// gauges so the visual language matches. Purely additive — never touches
+// gaugeExpense/gaugeSavings or their canvases.
+function renderIncomeBudgetGauges(monthEntries, income) {
+  const wrap = document.getElementById('incomeBudgetProgress');
+  if (!wrap) return;
+
+  // Destroy any Chart.js instances for canvases we're about to replace —
+  // these canvases get fully regenerated each render (category set can
+  // change), unlike the static gaugeExpense/gaugeSavings canvases which
+  // are reused in place, so stale chart references must be cleaned up
+  // first to avoid errors/leaks.
+  wrap.querySelectorAll('canvas').forEach(c => {
+    if (_charts[c.id]) { _charts[c.id].destroy(); delete _charts[c.id]; }
+  });
+
+  const incCats = CONFIG.categories.income || [];
+  const catMap = {};
+  monthEntries.filter(e => e.type === 'income').forEach(e => {
+    catMap[e.category] = (catMap[e.category] || 0) + (parseFloat(e.amount) || 0);
+  });
+  const colors = ['#4F46E5', '#F5A623', '#22C55E', '#3B82F6', '#A855F7', '#EF4444'];
+
+  const incGoalPct = CONFIG.goalIncome ? Math.min(Math.round(income / CONFIG.goalIncome * 100), 100) : 0;
+  const incGoalColor = incGoalPct >= 100 ? cssVar('--green', '#22C55E') : incGoalPct >= 50 ? cssVar('--gold', '#F5A623') : cssVar('--ind2', '#6366F1');
+
+  let html = `
+    <div class="gauge-item">
+      <div class="gauge-canvas-wrap">
+        <canvas id="gaugeIncome"></canvas>
+        <div class="gauge-center"><span class="pct" id="gaugeIncPct">${incGoalPct}%</span><span class="lbl">আয়<br>লক্ষ্য</span></div>
+      </div>
+      <div class="gauge-foot">আয় <b id="gaugeIncAmt">${fmtBDT(income)}</b><br><span class="en" style="font-size:10px">/ লক্ষ্য </span><b id="gaugeIncGoal" class="en" style="font-size:11px">${fmtBDT(CONFIG.goalIncome || 0)}</b></div>
+    </div>`;
+
+  const activeCats = incCats.filter(c => (catMap[c] || 0) > 0);
+  activeCats.forEach((cat, i) => {
+    const amt = catMap[cat] || 0;
+    const pct = income > 0 ? Math.round(amt / income * 100) : 0;
+    html += `
+      <div class="gauge-item">
+        <div class="gauge-canvas-wrap">
+          <canvas id="gaugeIncCat_${i}"></canvas>
+          <div class="gauge-center"><span class="pct">${pct}%</span><span class="lbl">${cat}</span></div>
+        </div>
+        <div class="gauge-foot">${cat} <b class="en">${fmtBDT(amt)}</b></div>
+      </div>`;
+  });
+
+  wrap.innerHTML = html;
+  makeGaugeChart('gaugeIncome', incGoalPct, incGoalColor);
+  activeCats.forEach((cat, i) => {
+    const amt = catMap[cat] || 0;
+    const pct = income > 0 ? Math.round(amt / income * 100) : 0;
+    makeGaugeChart(`gaugeIncCat_${i}`, pct, colors[i % colors.length]);
+  });
+}
+
 function makeDoughnutChart(canvasId, labels, values, colors) {
   const el = document.getElementById(canvasId);
   if (!el || typeof Chart === 'undefined') return;
@@ -3532,6 +3670,8 @@ function renderDashboard() {
   document.getElementById('gaugeSavPct').textContent = `${savPct}%`;
   document.getElementById('gaugeSavAmt').textContent = fmtBDT(savings);
   makeGaugeChart('gaugeSavings', savPct, cssVar('--green','#22C55E'));
+  // Income budget gauges (overall goal + per-category share) — same visual language as above
+  renderIncomeBudgetGauges(me, income);
   // Timeline — ALL entries of this month, scrollable
   const tl = document.getElementById('recentTimeline');
   const recent = me;
@@ -3634,6 +3774,179 @@ function renderFinance() {
   const msel = document.getElementById('financeFilterMember');
   msel.innerHTML = '<option value="">সব সদস্য</option>' + CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
   filterFinance();
+  renderSavingsBalanceCard();
+}
+
+// ══════════════════════════════════════════════════════════
+// SAVINGS BALANCE + BREAK-SAVINGS (withdraw from savings → income entry)
+// ──────────────────────────────────────────────────────────
+// Accounting model: a savings deposit is a normal `savings`-type entry
+// with a POSITIVE amount. A withdrawal ("ভাঙা") is stored as a SECOND
+// `savings`-type entry in the SAME category with a NEGATIVE amount —
+// so a category's current balance is always just the signed sum of its
+// entries. No separate ledger/balance table is needed, and there is no
+// way for a withdrawal to be double-counted, because it only ever
+// touches the one category's own signed sum.
+// ══════════════════════════════════════════════════════════
+
+// Pure calculation — sums signed savings amounts for one category.
+function getSavingsCategoryBalance(category) {
+  return APP_DATA.entries
+    .filter(e => e.type === 'savings' && e.category === category)
+    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+}
+
+function getTotalSavingsBalance() {
+  return (CONFIG.categories.savings || []).reduce((s, c) => s + getSavingsCategoryBalance(c), 0);
+}
+
+function renderSavingsBalanceCard() {
+  const list = document.getElementById('savingsBalanceList');
+  if (!list) return;
+  const cats = CONFIG.categories.savings || [];
+  document.getElementById('savingsBalanceTotal').textContent = fmtBDT(getTotalSavingsBalance());
+  list.innerHTML = cats.length ? cats.map(c => {
+    const bal = getSavingsCategoryBalance(c);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--blk3);border-radius:var(--r2)">
+      <div>
+        <div style="font-weight:600;font-size:13px">🏦 ${c}</div>
+        <div style="font-size:11px;color:var(--sil2)" class="en">Available Balance</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <b class="en" style="font-family:var(--font-num);font-variant-numeric:tabular-nums;color:${bal>0?'var(--green)':'var(--sil2)'}">${fmtBDT(bal)}</b>
+        <button class="btn btn-ghost btn-xs" ${bal<=0?'disabled':''} onclick="openBreakSavingsModal('${c.replace(/'/g,"\\'")}')">🔓 ভাঙো</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state" style="padding:16px"><p>কোনো সঞ্চয় ক্যাটাগরি নেই — Settings থেকে যোগ করো</p></div>';
+}
+
+function openBreakSavingsModal(preselectCategory) {
+  const cats = CONFIG.categories.savings || [];
+  if (!cats.length) { toast('আগে Settings থেকে একটা সঞ্চয় ক্যাটাগরি যোগ করো', 'warning'); return; }
+  const sel = document.getElementById('bsCategory');
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (preselectCategory) sel.value = preselectCategory;
+  const msel = document.getElementById('bsMember');
+  msel.innerHTML = CONFIG.members.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('bsDate').value = today();
+  document.getElementById('bsAmount').value = '';
+  document.getElementById('bsNote').value = '';
+  document.getElementById('bsPreview').style.display = 'none';
+  updateBreakSavingsBalance();
+  openModal('breakSavingsModal');
+}
+
+function updateBreakSavingsBalance() {
+  const cat = document.getElementById('bsCategory').value;
+  document.getElementById('bsBalanceHint').textContent = fmtBDT(getSavingsCategoryBalance(cat));
+  updateBreakSavingsPreview();
+}
+
+function updateBreakSavingsPreview() {
+  const cat    = document.getElementById('bsCategory').value;
+  const amount = parseFloat(document.getElementById('bsAmount').value) || 0;
+  const bal    = getSavingsCategoryBalance(cat);
+  const prev   = document.getElementById('bsPreview');
+  if (amount <= 0) { prev.style.display = 'none'; return; }
+  prev.style.display = 'block';
+  if (amount > bal) {
+    prev.style.color = 'var(--red)';
+    prev.innerHTML = `⚠️ এই ক্যাটাগরিতে মাত্র ${fmtBDT(bal)} আছে — ${fmtBDT(amount)} ভাঙা যাবে না।`;
+  } else {
+    prev.style.color = 'var(--sil)';
+    prev.innerHTML = `✅ ভাঙার পর ${cat}-এ থাকবে: <b style="color:var(--wht)">${fmtBDT(bal - amount)}</b><br>💰 আয়ে নতুন এন্ট্রি যোগ হবে: <b style="color:var(--gold)">${fmtBDT(amount)}</b>`;
+  }
+}
+
+// Builds the two linked entry objects (pure — no side effects), so the
+// exact numbers going into each side of the transaction can be reasoned
+// about/unit-checked in one place before anything touches APP_DATA:
+//   income entry.amount   =  +amount   (added to income)
+//   savings entry.amount  =  -amount   (subtracted from that category's balance)
+// Both share the SAME `amount`, so income-added always equals
+// savings-deducted exactly — no rounding drift, no double counting,
+// because each side reads the one shared `amount` variable once.
+function buildBreakSavingsEntryPair({ amount, date, category, member, payment, note }) {
+  const incomeId  = uid();
+  const savingsId = uid();
+  const nowIso = new Date().toISOString();
+  const incomeEntry = {
+    id: incomeId, type: 'income', amount: amount, date,
+    category: BREAK_SAVINGS_INCOME_CATEGORY,
+    member, payment,
+    note: `${category} সঞ্চয় থেকে ভাঙা${note ? ' — ' + note : ''}`,
+    driveFileId: null, driveFileName: null,
+    createdAt: nowIso, updatedAt: nowIso,
+    linkedEntryId: savingsId
+  };
+  const savingsEntry = {
+    id: savingsId, type: 'savings', amount: -Math.abs(amount), date,
+    category, member, payment,
+    note: `সঞ্চয় ভাঙা হয়েছে — আয় এন্ট্রি লিঙ্কড${note ? ' — ' + note : ''}`,
+    driveFileId: null, driveFileName: null,
+    createdAt: nowIso, updatedAt: nowIso,
+    linkedEntryId: incomeId
+  };
+  return { incomeEntry, savingsEntry };
+}
+
+// Same payload/endpoint as pushDataToBackend(), but resolves with a
+// clear {ok:true/false} instead of always resolving — pushDataToBackend()
+// intentionally swallows errors for its normal fire-and-forget callers,
+// which means it can't be used here to tell the user whether this
+// specific atomic write actually reached the Sheet.
+function pushBreakSavingsSync() {
+  if (!CONFIG.webAppUrl) return Promise.resolve({ ok: true, offline: true });
+  return fetch(`${CONFIG.webAppUrl}?action=sync`, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      entries: APP_DATA.entries, projects: APP_DATA.projects, tasks: APP_DATA.tasks,
+      shopping: APP_DATA.shopping, docs: APP_DATA.docs, bills: APP_DATA.bills
+    })
+  }).then(r => r.json()).then(d => ({ ok: !!(d && d.status === 'ok') }))
+    .catch(() => ({ ok: false }));
+}
+
+// Orchestration: validate → apply BOTH entries to local state in one
+// synchronous step (so it's never possible for only one to exist
+// locally) → push once as a single bulk sync call (one Apps Script
+// execution, one writeRows() call on the Entries sheet — both rows land
+// together or neither does) → clearly tell the user if that push failed.
+function confirmBreakSavings() {
+  const category = document.getElementById('bsCategory').value;
+  const amount   = parseFloat(document.getElementById('bsAmount').value) || 0;
+  const date     = document.getElementById('bsDate').value || today();
+  const member   = document.getElementById('bsMember').value;
+  const payment  = document.getElementById('bsPayment').value;
+  const note     = document.getElementById('bsNote').value.trim();
+
+  if (!category) { toast('সঞ্চয় ক্যাটাগরি বেছে নিন', 'warning'); return; }
+  if (!amount || amount <= 0) { toast('সঠিক পরিমাণ দিন', 'warning'); return; }
+
+  const balance = getSavingsCategoryBalance(category);
+  if (amount > balance) {
+    toast(`⚠️ ${category}-এ মাত্র ${fmtBDT(balance)} আছে — ${fmtBDT(amount)} ভাঙা যাবে না`, 'error');
+    return;
+  }
+
+  const { incomeEntry, savingsEntry } = buildBreakSavingsEntryPair({ amount, date, category, member, payment, note });
+
+  // Both entries land in local state together — no partial state possible.
+  APP_DATA.entries.unshift(incomeEntry);
+  APP_DATA.entries.unshift(savingsEntry);
+  saveData();
+
+  closeModal('breakSavingsModal');
+  renderRecentEntries(); renderDashboard(); renderFinance();
+  toast(`🔓 ${fmtBDT(amount)} "${category}" থেকে ভাঙা হয়েছে ও আয়ে যোগ হয়েছে — সিঙ্ক হচ্ছে…`);
+
+  pushBreakSavingsSync().then(result => {
+    if (result.ok) {
+      toast('✅ সিঙ্ক সম্পন্ন — দুটো এন্ট্রিই Google Sheets-এ সংরক্ষিত হয়েছে');
+    } else {
+      toast('⚠️ সিঙ্ক অসম্পূর্ণ — এন্ট্রি দুটো এই ডিভাইসে নিরাপদে আছে, ইন্টারনেট ঠিক হলে পরবর্তী Sync (🔄 বাটন বা পরবর্তী unlock) এ আবার চেষ্টা হবে। Sheets-এ এখনো আংশিক/অসামঞ্জস্যপূর্ণ কিছু লেখা হয়নি।', 'error');
+    }
+  });
 }
 
 function filterFinance() {
@@ -3813,7 +4126,7 @@ function saveCost() {
   // (this is what makes project costs show up in Dashboard totals too).
   openExternalExpenseConfirm({
     amount, category: 'অন্যান্য', date,
-    member: (CONFIG.members && CONFIG.members[0]) || '', payment: 'Cash',
+    member: getDeviceDefaultMember(), payment: 'Cash',
     note: `🔨 প্রজেক্ট খরচ — ${proj.name}: ${name}`
   }, (entry) => {
     if (!proj.costs) proj.costs=[];
@@ -3989,7 +4302,7 @@ function openTaskModal(id) {
     showExistingMiniFile('task', t.driveFileName);
   } else {
     ['tmText','tmDue','tmNotes'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('tmPriority').value='medium'; document.getElementById('tmMember').value=CONFIG.members[0];
+    document.getElementById('tmPriority').value='medium'; document.getElementById('tmMember').value=getDeviceDefaultMember();
   }
   openModal('taskModal');
 }
@@ -4102,7 +4415,7 @@ function toggleBought(id) {
     const catMap = {Grocery:'বাজার', Household:'অন্যান্য', Clothing:'পোশাক', Electronics:'অন্যান্য', Medicine:'ওষুধ', Other:'অন্যান্য'};
     openExternalExpenseConfirm({
       amount: s.price, category: catMap[s.category] || 'অন্যান্য', date: today(),
-      member: (CONFIG.members && CONFIG.members[0]) || '', payment: 'Cash',
+      member: getDeviceDefaultMember(), payment: 'Cash',
       note: `🛒 কেনাকাটা — ${s.name}${s.qty ? ' ('+s.qty+')' : ''}`
     }, (entry) => {
       s.expensedEntryId = entry.id;
@@ -4453,7 +4766,7 @@ function generateMonthlyBills() {
     }
     APP_DATA.bills.push({
       id: instId, categoryId: cat.id, category: cat.name, month: ym,
-      amount: cat.defaultAmount||0, member: cat.defaultMember||(CONFIG.members[0]||''),
+      amount: cat.defaultAmount||0, member: cat.defaultMember||getDeviceDefaultMember(),
       payment: cat.defaultPayment||'Cash', note: cat.defaultNote||'',
       dueDate, status: 'pending', paidDate: null, paidAmount: null, linkedEntryId: null,
       createdAt: new Date().toISOString()
@@ -4541,7 +4854,7 @@ function openBillInstanceModal(id) {
   document.getElementById('biPayment').value  = b.payment || 'Cash';
   const memSel = document.getElementById('biMember');
   memSel.innerHTML = CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
-  memSel.value = b.member || CONFIG.members[0] || '';
+  memSel.value = b.member || getDeviceDefaultMember();
   openModal('billInstanceModal');
 }
 
@@ -4576,7 +4889,7 @@ function payBillNow(id) {
     document.getElementById('entryAmount').value   = b.amount || '';
     document.getElementById('entryCategory').value = b.category || '';
     document.getElementById('entryDate').value     = today();
-    document.getElementById('entryMember').value   = b.member || CONFIG.members[0] || '';
+    document.getElementById('entryMember').value   = b.member || getDeviceDefaultMember();
     document.getElementById('entryPayment').value  = b.payment || 'Cash';
     document.getElementById('entryNote').value     = b.note || b.category || '';
     updateEntryPreview();
@@ -4822,6 +5135,7 @@ function renderSettings() {
     const sel=document.getElementById(id); if(!sel) return;
     sel.innerHTML=CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
   });
+  applyDeviceDefaultMemberToForms();
 }
 
 function updateBackendStatus() {
@@ -4967,11 +5281,59 @@ function changePasswords() {
   });
 }
 
+// ══════════════════════════════════════════════════════════
+// PER-DEVICE DEFAULT MEMBER
+// Which family member uses THIS device — stored only in this device's
+// localStorage, never synced to Google Sheets/other devices. Used to
+// auto-prefill the "member" select in Entry, Tasks, and Bills forms.
+// ══════════════════════════════════════════════════════════
+const DEVICE_DEFAULT_MEMBER_KEY = 'nabsfbk_device_default_member';
+function getDeviceDefaultMember() {
+  try {
+    const saved = localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY);
+    if (saved && CONFIG.members.includes(saved)) return saved;
+  } catch(e) {}
+  return (CONFIG.members && CONFIG.members[0]) || '';
+}
+function setDeviceDefaultMember(name) {
+  try { localStorage.setItem(DEVICE_DEFAULT_MEMBER_KEY, name); } catch(e) {}
+  renderMemberList();
+  applyDeviceDefaultMemberToForms();
+  toast(`★ "${name}" এখন এই ডিভাইসের ডিফল্ট সদস্য`);
+}
+// Prefill every "member" select currently in the DOM with this device's
+// default member. Called on init, on Settings render, and whenever the
+// default changes. User can still change the selection per entry.
+function applyDeviceDefaultMemberToForms() {
+  const def = getDeviceDefaultMember();
+  if (!def) return;
+  ['entryMember','tmMember'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if (sel && sel.options.length) sel.value = def;
+  });
+}
+
 function renderMemberList() {
   const div=document.getElementById('memberList');
-  div.innerHTML=CONFIG.members.map((m,i)=>`
-    <div class="member-chip"><div class="member-avatar">${m.charAt(0).toUpperCase()}</div><span>${m}</span>
-    ${CONFIG.members.length>1?`<span style="cursor:pointer;color:var(--sil2);font-size:12px" onclick="removeMember(${i})">✕</span>`:''}</div>`).join('');
+  const def = getDeviceDefaultMember();
+  div.innerHTML=CONFIG.members.map((m,i)=>{
+    const esc = m.replace(/'/g,"\\'");
+    const isDef = m===def;
+    return `<div class="member-chip sortable-chip${isDef?' is-default':''}" draggable="true" data-idx="${i}">
+      <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
+      <div class="member-avatar">${m.charAt(0).toUpperCase()}</div>
+      <span>${m}</span>
+      <div class="mc-actions">
+        <button class="star${isDef?' is-active':''}" title="এই ডিভাইসের ডিফল্ট সদস্য বানাও" onclick="setDeviceDefaultMember('${esc}')">${isDef?'★':'☆'}</button>
+        <button class="edit" title="নাম পরিবর্তন" onclick="renameMember(${i})">✏️</button>
+        ${CONFIG.members.length>1?`<button class="del" title="মুছুন" onclick="removeMember(${i})">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  wireChipDragDrop(div, (from,to)=>{
+    reorderArray(CONFIG.members, from, to);
+    saveConfig(); renderMemberList(); applyDeviceDefaultMemberToForms();
+  });
 }
 function addMember() {
   const name=document.getElementById('newMemberInput').value.trim();
@@ -4981,8 +5343,43 @@ function addMember() {
 }
 function removeMember(i) {
   secureConfirm(`"${CONFIG.members[i]}" সদস্য মুছবেন?`,()=>{
-    CONFIG.members.splice(i,1); saveConfig(); renderMemberList();
+    const removedName = CONFIG.members[i];
+    CONFIG.members.splice(i,1); saveConfig();
+    try {
+      if (localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY) === removedName) {
+        localStorage.removeItem(DEVICE_DEFAULT_MEMBER_KEY);
+      }
+    } catch(e) {}
+    renderMemberList(); applyDeviceDefaultMemberToForms();
   });
+}
+// Renaming a member cascades to every existing Finance entry, Task, Bill
+// instance, and Bill-category default that referenced the old name — same
+// pattern as renameCategory() below.
+function renameMember(i) {
+  const oldName = CONFIG.members[i];
+  const val = prompt('নতুন নাম দিন:', oldName);
+  if (!val || !val.trim() || val.trim() === oldName) return;
+  const newName = val.trim();
+  if (CONFIG.members.includes(newName)) { toast('এই নাম আগে থেকেই আছে','warning'); return; }
+  CONFIG.members[i] = newName;
+  APP_DATA.entries.forEach(e => { if (e.member === oldName) e.member = newName; });
+  APP_DATA.tasks.forEach(t => { if (t.member === oldName) t.member = newName; });
+  (APP_DATA.bills||[]).forEach(b => { if (b.member === oldName) b.member = newName; });
+  (CONFIG.billCategories||[]).forEach(c => { if (c.defaultMember === oldName) c.defaultMember = newName; });
+  try {
+    if (localStorage.getItem(DEVICE_DEFAULT_MEMBER_KEY) === oldName) {
+      localStorage.setItem(DEVICE_DEFAULT_MEMBER_KEY, newName);
+    }
+  } catch(e) {}
+  saveConfig(); saveData();
+  renderMemberList(); applyDeviceDefaultMemberToForms();
+  renderRecentEntries(); renderDashboard();
+  if (typeof renderFinance === 'function') renderFinance();
+  if (typeof renderTasks === 'function') renderTasks();
+  if (typeof renderBills === 'function') renderBills();
+  pushDataToBackend();
+  toast('সদস্যের নাম পরিবর্তন হয়েছে!');
 }
 
 function renderCatList(type,elId) {
@@ -5225,6 +5622,7 @@ function initApp() {
     const sel=document.getElementById(id); if(!sel) return;
     sel.innerHTML=CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
   });
+  applyDeviceDefaultMemberToForms();
   populateProjectCategorySelects();
   populateDocCategorySelects();
   generateMonthlyBills();
