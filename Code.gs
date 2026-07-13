@@ -234,7 +234,7 @@ function buildOTPEmailHTML(otp, type) {
 // ══════════════════════════════════════════════════════════
 function handleAddEntry(body) {
   const ss    = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-  const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt'];
+  const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt','LinkedEntryId'];
   const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
   ensureHeaders(sheet, headers);
 
@@ -242,7 +242,8 @@ function handleAddEntry(body) {
     body.id || '', body.date || '', body.type || '', body.category || '',
     parseFloat(body.amount) || 0, body.member || '', body.payment || '',
     body.note || '', body.createdAt || new Date().toISOString(),
-    body.driveFileId || '', body.driveFileName || '', body.updatedAt || new Date().toISOString()
+    body.driveFileId || '', body.driveFileName || '', body.updatedAt || new Date().toISOString(),
+    body.linkedEntryId || ''
   ];
 
   // Upsert by ID: if this entry already exists (this call is an EDIT,
@@ -316,13 +317,13 @@ function handleSync(body) {
   // wiping the whole Sheet the first time it pushes before it has pulled
   // anything down yet.
   if (Array.isArray(body.entries) && body.entries.length) {
-    const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt'];
+    const headers = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt','LinkedEntryId'];
     const sheet = getOrCreateSheet(ss, SHEETS.ENTRIES, headers);
     ensureHeaders(sheet, headers);
     writeRows(sheet, body.entries.map(e => [
       e.id||'', e.date||'', e.type||'', e.category||'', parseFloat(e.amount)||0,
       e.member||'', e.payment||'', e.note||'', e.createdAt||'',
-      e.driveFileId||'', e.driveFileName||'', e.updatedAt||''
+      e.driveFileId||'', e.driveFileName||'', e.updatedAt||'', e.linkedEntryId||''
     ]), headers.length);
   }
 
@@ -419,13 +420,14 @@ function handlePullData() {
     });
   }
 
-  const entryHeaders = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt'];
+  const entryHeaders = ['ID','Date','Type','Category','Amount','Member','PaymentMethod','Note','CreatedAt','DriveFileId','DriveFileName','UpdatedAt','LinkedEntryId'];
   const entries = readSheet(SHEETS.ENTRIES, entryHeaders).map(r => ({
     id:String(r.ID), date:formatDateVal(r.Date), type:r.Type, category:r.Category, amount:Number(r.Amount)||0,
     member:r.Member, payment:r.PaymentMethod, note:r.Note,
     createdAt:r.CreatedAt ? new Date(r.CreatedAt).toISOString() : '',
     updatedAt:r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : '',
-    driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null
+    driveFileId:r.DriveFileId||null, driveFileName:r.DriveFileName||null,
+    linkedEntryId:r.LinkedEntryId ? String(r.LinkedEntryId) : null
   }));
 
   const projectHeaders = ['ID','Name','Category','Status','StartDate','EndDate','Budget','ActualCost','Priority','Notes','CreatedAt','DriveFileId','DriveFileName','UpdatedAt'];
