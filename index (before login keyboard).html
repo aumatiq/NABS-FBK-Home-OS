@@ -234,83 +234,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .lock-otp-info { background: rgba(79,70,229,0.08); border: 1px solid var(--bd); border-radius: var(--r); padding: 12px 16px; font-size: 12px; color: var(--sil); margin-bottom: 16px; text-align: left; line-height: 1.6; }
 
 /* ══════════════════════════════════════════════════════
-   ON-SCREEN CUSTOM KEYBOARD
-   Used ONLY on App Lock screen + Settings Lock screen.
-   Real device keyboard is suppressed on those two inputs via
-   inputmode="none" (see #appLockInput / #settingsLockInput).
-   ══════════════════════════════════════════════════════ */
-:root { --kb-h: 0px; }
-
-/* When the keyboard is open, eat into the lock-screen's own box so the
-   .lock-box visually shifts up above the keyboard — no manual repositioning
-   math needed, flexbox centering does it for free. Also switch to
-   top-aligned + scrollable: some lock screens (e.g. Settings Lock, which
-   has extra content like the cancel link) are taller than others, so a
-   fixed center could still clip content behind the keyboard — scrolling
-   guarantees every element stays reachable regardless of content height. */
-.lock-screen { transition: padding-bottom 0.25s ease; }
-.lock-screen.kb-open {
-  padding-bottom: var(--kb-h);
-  align-items: flex-start;
-  overflow-y: auto;
-  padding-top: max(24px, 6vh);
-}
-
-.aq-kb {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5200;
-  background: var(--blk2);
-  border-top: 1px solid var(--bd2);
-  box-shadow: 0 -10px 36px rgba(0,0,0,0.45);
-  padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px));
-  transform: translateY(100%);
-  transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
-}
-.aq-kb.show { transform: translateY(0); }
-
-.aq-kb-topbar { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 10px; }
-.aq-kb-mode-label { font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sil); }
-.aq-kb-hide {
-  background: rgba(79,70,229,0.14); border: 1px solid var(--bd); color: var(--sil);
-  border-radius: 8px; width: 40px; height: 36px; min-width: 44px; min-height: 36px;
-  display: flex; align-items: center; justify-content: center; font-size: 15px;
-  cursor: pointer; transition: background 0.2s, color 0.2s;
-}
-.aq-kb-hide:hover, .aq-kb-hide:active { background: var(--ind); color: #fff; }
-
-.aq-kb-page { display: none; }
-.aq-kb-page.active { display: block; }
-
-.aq-kb-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 7px; }
-.aq-kb-row:last-child { margin-bottom: 0; }
-
-.aq-kb-key {
-  flex: 1; max-width: 40px; min-width: 32px; height: 46px;
-  background: var(--blk3); border: 1px solid var(--bd); border-radius: 10px;
-  color: var(--wht); font-family: var(--font-en); font-size: 16px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s, transform 0.08s;
-}
-.aq-kb-key:active { background: var(--ind); transform: scale(0.93); }
-
-.aq-kb-key.toggle, .aq-kb-key.backspace, .aq-kb-key.shift {
-  background: var(--blk4); color: var(--sil); font-size: 13px; font-weight: 700; max-width: 56px;
-}
-.aq-kb-key.shift.active { background: var(--ind); color: #fff; }
-.aq-kb-key.wide { flex: 1.5; max-width: 70px; }
-.aq-kb-key.space { flex: 3.4; max-width: none; font-size: 12px; color: var(--sil); letter-spacing: 1px; }
-.aq-kb-key.enter {
-  flex: 1.7; max-width: 84px; font-size: 14px; font-weight: 700;
-  background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0A0A0F; border-color: transparent;
-}
-.aq-kb-key.enter:active { transform: scale(0.93); filter: brightness(0.94); }
-
-@media (max-width: 380px) {
-  .aq-kb-key { height: 44px; font-size: 15px; }
-  .aq-kb-row { gap: 5px; }
-}
-
-/* ══════════════════════════════════════════════════════
    TOP HEADER
    ══════════════════════════════════════════════════════ */
 .app-header {
@@ -1130,7 +1053,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="lock-sub">প্রবেশ করতে পাসওয়ার্ড দিন</div>
 
     <div class="lock-input-wrap">
-      <input type="password" class="lock-input" id="appLockInput" placeholder="••••••••" maxlength="20" autocomplete="off" inputmode="none">
+      <input type="password" class="lock-input" id="appLockInput" placeholder="••••••••" maxlength="20" autocomplete="off">
       <button class="lock-eye" onclick="toggleLockEye('appLockInput', this)">👁️</button>
     </div>
     <button class="lock-btn" onclick="attemptAppUnlock()">🔓 প্রবেশ করুন</button>
@@ -1149,7 +1072,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="lock-sub" id="settingsLockMsg">Settings-এ ঢুকতে Admin পাসওয়ার্ড দিন</div>
 
     <div class="lock-input-wrap">
-      <input type="password" class="lock-input" id="settingsLockInput" placeholder="••••••••" maxlength="20" autocomplete="off" inputmode="none">
+      <input type="password" class="lock-input" id="settingsLockInput" placeholder="••••••••" maxlength="20" autocomplete="off">
       <button class="lock-eye" onclick="toggleLockEye('settingsLockInput', this)">👁️</button>
     </div>
     <button class="lock-btn" onclick="attemptSettingsUnlock()">🔓 যাচাই করুন</button>
@@ -1158,123 +1081,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="lock-cancel" onclick="closeSettingsLock()">✕ বাতিল করুন</div>
   </div>
 </div>
-
-<!-- ═══════════════════════════════════════
-     ON-SCREEN CUSTOM KEYBOARD
-     Shared by App Lock screen + Settings Lock screen ONLY.
-     Every other input in the app keeps using the native device keyboard.
-     ═══════════════════════════════════════ -->
-<div class="aq-kb" id="aqKeyboard" role="group" aria-label="On-screen keyboard">
-
-  <div class="aq-kb-topbar">
-    <span class="aq-kb-mode-label" id="aqKbModeLabel">ABC</span>
-    <button type="button" class="aq-kb-hide" onclick="hideCustomKeyboard()" aria-label="কিবোর্ড লুকান">⌄</button>
-  </div>
-
-  <!-- ── ALPHABETIC PAGE (default) ── -->
-  <div class="aq-kb-page active" id="aqKbPage-abc">
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key letter" data-char="q" onclick="kbPress('q')">q</button>
-      <button type="button" class="aq-kb-key letter" data-char="w" onclick="kbPress('w')">w</button>
-      <button type="button" class="aq-kb-key letter" data-char="e" onclick="kbPress('e')">e</button>
-      <button type="button" class="aq-kb-key letter" data-char="r" onclick="kbPress('r')">r</button>
-      <button type="button" class="aq-kb-key letter" data-char="t" onclick="kbPress('t')">t</button>
-      <button type="button" class="aq-kb-key letter" data-char="y" onclick="kbPress('y')">y</button>
-      <button type="button" class="aq-kb-key letter" data-char="u" onclick="kbPress('u')">u</button>
-      <button type="button" class="aq-kb-key letter" data-char="i" onclick="kbPress('i')">i</button>
-      <button type="button" class="aq-kb-key letter" data-char="o" onclick="kbPress('o')">o</button>
-      <button type="button" class="aq-kb-key letter" data-char="p" onclick="kbPress('p')">p</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key letter" data-char="a" onclick="kbPress('a')">a</button>
-      <button type="button" class="aq-kb-key letter" data-char="s" onclick="kbPress('s')">s</button>
-      <button type="button" class="aq-kb-key letter" data-char="d" onclick="kbPress('d')">d</button>
-      <button type="button" class="aq-kb-key letter" data-char="f" onclick="kbPress('f')">f</button>
-      <button type="button" class="aq-kb-key letter" data-char="g" onclick="kbPress('g')">g</button>
-      <button type="button" class="aq-kb-key letter" data-char="h" onclick="kbPress('h')">h</button>
-      <button type="button" class="aq-kb-key letter" data-char="j" onclick="kbPress('j')">j</button>
-      <button type="button" class="aq-kb-key letter" data-char="k" onclick="kbPress('k')">k</button>
-      <button type="button" class="aq-kb-key letter" data-char="l" onclick="kbPress('l')">l</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key shift" onclick="kbToggleShift()" aria-label="Shift — বড় হাতের অক্ষর">⇧</button>
-      <button type="button" class="aq-kb-key letter" data-char="z" onclick="kbPress('z')">z</button>
-      <button type="button" class="aq-kb-key letter" data-char="x" onclick="kbPress('x')">x</button>
-      <button type="button" class="aq-kb-key letter" data-char="c" onclick="kbPress('c')">c</button>
-      <button type="button" class="aq-kb-key letter" data-char="v" onclick="kbPress('v')">v</button>
-      <button type="button" class="aq-kb-key letter" data-char="b" onclick="kbPress('b')">b</button>
-      <button type="button" class="aq-kb-key letter" data-char="n" onclick="kbPress('n')">n</button>
-      <button type="button" class="aq-kb-key letter" data-char="m" onclick="kbPress('m')">m</button>
-      <button type="button" class="aq-kb-key backspace" onclick="kbBackspace()" aria-label="Backspace">⌫</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key toggle wide" onclick="kbSwitchMode('num')">123</button>
-      <button type="button" class="aq-kb-key space" onclick="kbPress(' ')">স্পেস</button>
-      <button type="button" class="aq-kb-key enter" onclick="kbEnter()">↵ Go</button>
-    </div>
-  </div>
-
-  <!-- ── NUMERIC PAGE ── -->
-  <div class="aq-kb-page" id="aqKbPage-num">
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key" onclick="kbPress('1')">1</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('2')">2</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('3')">3</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key" onclick="kbPress('4')">4</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('5')">5</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('6')">6</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key" onclick="kbPress('7')">7</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('8')">8</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('9')">9</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key toggle" onclick="kbSwitchMode('sym')">#+=</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('0')">0</button>
-      <button type="button" class="aq-kb-key backspace" onclick="kbBackspace()" aria-label="Backspace">⌫</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key toggle wide" onclick="kbSwitchMode('abc')">ABC</button>
-      <button type="button" class="aq-kb-key enter" onclick="kbEnter()">↵ Go</button>
-    </div>
-  </div>
-
-  <!-- ── SYMBOL PAGE ── -->
-  <div class="aq-kb-page" id="aqKbPage-sym">
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key" onclick="kbPress('-')">-</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('/')">/</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress(':')">:</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress(';')">;</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('(')">(</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress(')')">)</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('&amp;')">&amp;</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('@')">@</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('&quot;')">&quot;</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key" onclick="kbPress('.')">.</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress(',')">,</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('?')">?</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('!')">!</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('&#39;')">&#39;</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('*')">*</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('#')">#</button>
-      <button type="button" class="aq-kb-key" onclick="kbPress('+')">+</button>
-      <button type="button" class="aq-kb-key backspace" onclick="kbBackspace()" aria-label="Backspace">⌫</button>
-    </div>
-    <div class="aq-kb-row">
-      <button type="button" class="aq-kb-key toggle" onclick="kbSwitchMode('num')">123</button>
-      <button type="button" class="aq-kb-key toggle" onclick="kbSwitchMode('abc')">ABC</button>
-      <button type="button" class="aq-kb-key enter wide" onclick="kbEnter()">↵ Go</button>
-    </div>
-  </div>
-
-</div>
-<!-- ═══ END ON-SCREEN CUSTOM KEYBOARD ═══ -->
 
 <!-- ═══════════════════════════════════════
      FORGOT PASSWORD / OTP SCREEN
@@ -2977,7 +2783,6 @@ function attemptAppUnlock() {
     // Verify via backend
     verifyPassViaBackend(hashPass(val), 'app', () => {
       markSessionUnlocked();
-      hideCustomKeyboard();
       document.getElementById('appLockScreen').classList.add('hidden');
       document.getElementById('app').classList.remove('locked');
       initApp();
@@ -2986,7 +2791,6 @@ function attemptAppUnlock() {
     // Local verification
     if (hashPass(val) === CONFIG.appPassHash) {
       markSessionUnlocked();
-      hideCustomKeyboard();
       document.getElementById('appLockScreen').classList.add('hidden');
       document.getElementById('app').classList.remove('locked');
       initApp();
@@ -2999,12 +2803,6 @@ function attemptAppUnlock() {
 document.getElementById('appLockInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') attemptAppUnlock();
 });
-// Tapping the input (or it being programmatically focused) always brings
-// the custom keyboard back up — covers the case where the user dismissed
-// it with the ⌄ hide key and wants to type again.
-document.getElementById('appLockInput').addEventListener('focus', () => {
-  showCustomKeyboard('appLockInput', 'appLockScreen');
-});
 
 // ──────────────────────────────────────────
 // SETTINGS LOCK (Tier 2)
@@ -3015,13 +2813,10 @@ function openSettingsLock(msg, onSuccess) {
   document.getElementById('settingsLockInput').value = '';
   document.getElementById('settingsLockError').textContent = '';
   document.getElementById('settingsLockScreen').classList.remove('hidden');
-  showCustomKeyboard('settingsLockInput', 'settingsLockScreen');
-  document.getElementById('settingsLockInput').focus();
 }
 
 function closeSettingsLock() {
   document.getElementById('settingsLockScreen').classList.add('hidden');
-  hideCustomKeyboard();
   pendingSecureAction = null;
 }
 
@@ -3031,7 +2826,6 @@ function attemptSettingsUnlock() {
   const check = () => {
     if (hashPass(val) === CONFIG.adminPassHash) {
       document.getElementById('settingsLockScreen').classList.add('hidden');
-      hideCustomKeyboard();
       if (pendingSecureAction) { pendingSecureAction(); pendingSecureAction = null; }
     } else {
       showLockError('settingsLockError','❌ Admin পাসওয়ার্ড ভুল');
@@ -3040,7 +2834,6 @@ function attemptSettingsUnlock() {
   if (CONFIG.webAppUrl) {
     verifyPassViaBackend(hashPass(val), 'admin', () => {
       document.getElementById('settingsLockScreen').classList.add('hidden');
-      hideCustomKeyboard();
       if (pendingSecureAction) { pendingSecureAction(); pendingSecureAction = null; }
     }, () => showLockError('settingsLockError','❌ Admin পাসওয়ার্ড ভুল'));
   } else { check(); }
@@ -3048,9 +2841,6 @@ function attemptSettingsUnlock() {
 
 document.getElementById('settingsLockInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') attemptSettingsUnlock();
-});
-document.getElementById('settingsLockInput').addEventListener('focus', () => {
-  showCustomKeyboard('settingsLockInput', 'settingsLockScreen');
 });
 
 // ──────────────────────────────────────────
@@ -3089,7 +2879,6 @@ function openForgotFlow(type) {
   }
   document.getElementById('settingsLockScreen').classList.add('hidden');
   document.getElementById('appLockScreen').classList.add('hidden');
-  hideCustomKeyboard(); // Forgot/OTP screen uses the native device keyboard, not this one
   document.getElementById('forgotScreen').classList.remove('hidden');
 }
 
@@ -3097,8 +2886,6 @@ function closeForgotFlow() {
   document.getElementById('forgotScreen').classList.add('hidden');
   if (document.getElementById('app').classList.contains('locked')) {
     document.getElementById('appLockScreen').classList.remove('hidden');
-    showCustomKeyboard('appLockInput', 'appLockScreen');
-    document.getElementById('appLockInput').focus();
   }
 }
 
@@ -3177,100 +2964,6 @@ function showLockError(elId, msg) {
   const el = document.getElementById(elId);
   el.textContent = msg;
   setTimeout(() => { if(el) el.textContent = ''; }, 3000);
-}
-
-// ──────────────────────────────────────────
-// ON-SCREEN CUSTOM KEYBOARD (App Lock + Settings Lock only)
-// ──────────────────────────────────────────
-let _kbActiveInputId = null;   // which lock input is currently receiving keys
-let _kbActiveScreenId = null;  // which lock-screen owns that input (for kb-open class)
-let _kbMode = 'abc';           // 'abc' | 'num' | 'sym'
-let _kbShift = false;
-
-function showCustomKeyboard(inputId, screenId) {
-  _kbActiveInputId  = inputId;
-  _kbActiveScreenId = screenId;
-  _kbMode  = 'abc';
-  _kbShift = false;
-  renderKbMode();
-
-  const kb = document.getElementById('aqKeyboard');
-  kb.classList.add('show');
-
-  const screen = document.getElementById(screenId);
-  if (screen) screen.classList.add('kb-open');
-
-  // Measure the keyboard's real height once it has rendered, so the
-  // lock-screen's bottom padding matches exactly (keeps the lock box
-  // centered in the space above the keyboard, never covered by it).
-  requestAnimationFrame(() => {
-    document.documentElement.style.setProperty('--kb-h', kb.offsetHeight + 'px');
-  });
-}
-
-function hideCustomKeyboard() {
-  const kb = document.getElementById('aqKeyboard');
-  kb.classList.remove('show');
-  document.querySelectorAll('.lock-screen.kb-open').forEach(s => s.classList.remove('kb-open'));
-  document.documentElement.style.setProperty('--kb-h', '0px');
-  _kbActiveInputId  = null;
-  _kbActiveScreenId = null;
-}
-
-function kbPress(char) {
-  if (!_kbActiveInputId) return;
-  const inp = document.getElementById(_kbActiveInputId);
-  if (!inp) return;
-  const max = parseInt(inp.getAttribute('maxlength') || '999', 10);
-  if (inp.value.length >= max) return;
-
-  const out = (_kbShift && _kbMode === 'abc') ? char.toUpperCase() : char;
-  inp.value += out;
-  inp.dispatchEvent(new Event('input', { bubbles: true }));
-
-  // Mobile-style "one-shot" shift: auto turns off after one letter.
-  if (_kbShift && _kbMode === 'abc') {
-    _kbShift = false;
-    renderKbMode();
-  }
-}
-
-function kbBackspace() {
-  if (!_kbActiveInputId) return;
-  const inp = document.getElementById(_kbActiveInputId);
-  if (!inp) return;
-  inp.value = inp.value.slice(0, -1);
-  inp.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function kbEnter() {
-  if (_kbActiveInputId === 'appLockInput') attemptAppUnlock();
-  else if (_kbActiveInputId === 'settingsLockInput') attemptSettingsUnlock();
-}
-
-function kbToggleShift() {
-  _kbShift = !_kbShift;
-  renderKbMode();
-}
-
-function kbSwitchMode(mode) {
-  _kbMode = mode;
-  _kbShift = false;
-  renderKbMode();
-}
-
-function renderKbMode() {
-  document.querySelectorAll('.aq-kb-page').forEach(p => p.classList.remove('active'));
-  const page = document.getElementById('aqKbPage-' + _kbMode);
-  if (page) page.classList.add('active');
-
-  const label = document.getElementById('aqKbModeLabel');
-  if (label) label.textContent = _kbMode === 'abc' ? 'ABC' : (_kbMode === 'num' ? '123' : '#+=');
-
-  document.querySelectorAll('.aq-kb-key.shift').forEach(k => k.classList.toggle('active', _kbShift));
-  document.querySelectorAll('.aq-kb-key.letter').forEach(k => {
-    k.textContent = _kbShift ? k.dataset.char.toUpperCase() : k.dataset.char;
-  });
 }
 
 // ──────────────────────────────────────────
@@ -6553,8 +6246,6 @@ function forceReLock(customMessage) {
   document.getElementById('appLockInput').value = '';
   document.getElementById('appLockScreen').classList.remove('hidden');
   document.getElementById('app').classList.add('locked');
-  showCustomKeyboard('appLockInput', 'appLockScreen');
-  document.getElementById('appLockInput').focus();
   const msg = (typeof customMessage === 'string' && customMessage)
     ? customMessage
     : '⏱️ নিষ্ক্রিয়তার কারণে অ্যাপ লক হয়ে গেছে';
@@ -6580,14 +6271,6 @@ if (sessionStorage.getItem('nabsfbk_unlocked') === '1' && isSessionStillValid())
 } else if (sessionStorage.getItem('nabsfbk_unlocked') === '1') {
   // Flag was set but the timeout window has already passed — clear it.
   clearSessionUnlocked();
-}
-
-// If the App Lock screen is still showing at this point (fresh visit, or
-// an expired session above), bring up the custom on-screen keyboard and
-// focus the password input immediately — no extra tap needed to start typing.
-if (document.getElementById('app').classList.contains('locked')) {
-  showCustomKeyboard('appLockInput', 'appLockScreen');
-  document.getElementById('appLockInput').focus();
 }
 
 // Service Worker
