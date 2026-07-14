@@ -934,98 +934,11 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   .header-title .name { letter-spacing:0; padding:2px 6px; }
 }
 
-/* ══════════════════════════════════════════════════════
-   HEADER — LANDSCAPE / SHORT-HEIGHT OVERRIDE
-   Fires only when orientation is landscape AND vertical space is
-   tight (max-height:500px) — i.e. a phone rotated sideways —
-   regardless of width. This is independent of the max-width:640px
-   portrait rule above and always wins the cascade for the
-   properties it sets because it's declared later in the file.
-
-   Root cause it fixes: below 640px width, the header switched to the
-   portrait 3-row×3-col grid (correct for portrait) even in landscape,
-   where the same row heights left almost no room and the header
-   squeezed/overflowed. Above 640px width, the header just fell back
-   to the plain desktop flex layout, which doesn't overlap, but stacks
-   sync+logout vertically and uses full-size icons/text, so the header
-   ate up over a third of a short landscape viewport.
-
-   Fix: force ONE consistent, compact 2-row CSS Grid for every short
-   landscape case. Column/row layout mirrors the portrait spec's
-   intent (col 1 = logo + sync/lock actions, col 2 = client name +
-   clock, col 3 = dates) so the same "centered column" alignment
-   holds in landscape too, just restructured into 2 rows instead of 3
-   to fit the reduced height. Desktop (max-height > 500px) and
-   portrait (orientation:portrait) are completely unaffected.
-   ══════════════════════════════════════════════════════ */
-@media (orientation: landscape) and (max-height: 500px) {
-  .app-header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-rows: auto auto;
-    grid-template-areas:
-      "logo name  dates"
-      "acts time  dates";
-    align-items: center;
-    row-gap: 3px; column-gap: 10px;
-    padding: 8px 16px;
-  }
-  .header-logo, .header-right, .header-meta, .header-dates { display: contents; }
-
-  /* header-actions stays a real (flex) box here — sync + logout sit
-     side-by-side as one compact unit inside grid-area "acts", instead
-     of each being promoted individually like in the portrait grid. */
-  .header-actions {
-    display: flex; flex-direction: row; align-items: center; justify-content: center;
-    gap: 6px; grid-area: acts; justify-self: center; align-self: center;
-  }
-
-  .header-logo-icon {
-    grid-area: logo; justify-self: center; align-self: center;
-    width: 30px; height: 30px; font-size: 13px; border-radius: 9px;
-  }
-
-  .header-title { grid-area: name; justify-self: center; align-items: center; text-align: center; overflow: visible; }
-  .header-title .name-desktop { display: inline-block; }
-  .header-title .name-mobile  { display: none; }
-  .header-title .name { white-space: nowrap; overflow: visible; text-overflow: clip; max-width: none; font-size: 13px; font-weight: 800; padding: 2px 8px; }
-  .header-title .sub  { display: none; }
-
-  .header-dates .clock-time {
-    grid-area: time; justify-self: center; align-self: center;
-    font-size: 14px; padding: 1px 7px;
-  }
-
-  .date-pills {
-    grid-area: dates; flex-direction: row; flex-wrap: nowrap;
-    align-items: center; justify-content: flex-end;
-    height: 100%; max-width: none; gap: 4px;
-  }
-  .date-pill.pill-bn    { order: 1; }
-  .date-pill.pill-hijri { order: 2; }
-  .date-pill.pill-en    { order: 3; }
-  .date-pill { font-size: 8.5px; font-weight: 700; padding: 1.5px 7px; }
-
-  .sync-btn, .logout-btn { width: 30px; height: 30px; border-radius: 8px; }
-  .sync-btn { font-size: 12px; }
-  /* Reset the portrait rule's `min-width:44px; height:auto; flex-direction:column`
-     (from the max-width:640px block) which would otherwise clamp this button
-     wider/taller than intended when both queries match at once (e.g. a narrow
-     landscape phone like 568×320). */
-  .logout-btn { flex-direction: column; min-width: 30px; padding: 2px; gap: 0; }
-  .logout-btn .logout-icon { font-size: 10.5px; }
-  .logout-btn .logout-timer { font-size: 6.5px; min-width: auto; }
-  .sync-btn-wrap .status-dot { width: 7px; height: 7px; top: -1px; right: -1px; }
-}
-
 
 /* ══════════════════════════════════════════════════════
    CHART.JS CANVAS WRAPPERS (Budget Progress + Finance tab)
    ══════════════════════════════════════════════════════ */
 .chart-canvas-wrap { position:relative; width:100%; }
-.budget-subsection { margin-top:16px; padding-top:14px; border-top:1px solid var(--bd); }
-.budget-subsection:first-of-type { margin-top:0; padding-top:0; border-top:none; }
-.budget-subsection-title { font-size:13px; color:var(--sil); margin-bottom:10px; }
 .budget-charts { display:flex; gap:18px; justify-content:space-around; flex-wrap:wrap; padding-top:2px; }
 .gauge-item { display:flex; flex-direction:column; align-items:center; gap:8px; flex:0 1 130px; }
 .gauge-canvas-wrap { position:relative; width:118px; height:118px; }
@@ -1232,44 +1145,28 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
           <h2 style="font-size:15px;">📊 বাজেট অগ্রগতি</h2>
           <span class="badge badge-ind en" id="dashMonth">—</span>
         </div>
-        <!-- Order fixed: আয় (Income) → সঞ্চয় (Savings) → ব্যয় (Expense).
-             DOM order matches visual order (no CSS `order` hack) for
-             accessibility. All three subsections share the exact same
-             gauge-item/gauge-canvas-wrap visual language. -->
-
-        <!-- 1) INCOME — generated dynamically (JS) since income categories
-             are user-configurable. See renderIncomeBudgetGauges(). -->
-        <div class="budget-subsection">
-          <h2 class="budget-subsection-title">💰 আয়ের বাজেট</h2>
+        <div id="budgetProgress" class="budget-charts">
+          <div class="gauge-item">
+            <div class="gauge-canvas-wrap">
+              <canvas id="gaugeExpense"></canvas>
+              <div class="gauge-center"><span class="pct" id="gaugeExpPct">0%</span><span class="lbl">ব্যয়<br>বাজেট</span></div>
+            </div>
+            <div class="gauge-foot">খরচ <b id="gaugeExpAmt">৳০</b><br><span class="en" style="font-size:10px">/ বাজেট </span><b id="gaugeExpGoal" class="en" style="font-size:11px">৳০</b></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-canvas-wrap">
+              <canvas id="gaugeSavings"></canvas>
+              <div class="gauge-center"><span class="pct" id="gaugeSavPct">0%</span><span class="lbl">সঞ্চয়<br>লক্ষ্য</span></div>
+            </div>
+            <div class="gauge-foot">জমা <b id="gaugeSavAmt">৳০</b><br><span style="font-size:10px">এই মাসে</span></div>
+          </div>
+        </div>
+        <!-- Income budget section — same gauge-item/gauge-canvas-wrap visual
+             language as above, generated dynamically (JS) since income
+             categories are user-configurable. See renderIncomeBudgetGauges(). -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+          <h2 style="font-size:13px;color:var(--sil);margin-bottom:10px">💰 আয়ের বাজেট</h2>
           <div id="incomeBudgetProgress" class="budget-charts"></div>
-        </div>
-
-        <!-- 2) SAVINGS -->
-        <div class="budget-subsection">
-          <h2 class="budget-subsection-title">🏦 সঞ্চয়ের বাজেট</h2>
-          <div id="savingsBudgetProgress" class="budget-charts">
-            <div class="gauge-item">
-              <div class="gauge-canvas-wrap">
-                <canvas id="gaugeSavings"></canvas>
-                <div class="gauge-center"><span class="pct" id="gaugeSavPct">0%</span><span class="lbl">সঞ্চয়<br>লক্ষ্য</span></div>
-              </div>
-              <div class="gauge-foot">জমা <b id="gaugeSavAmt">৳০</b><br><span style="font-size:10px">এই মাসে</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3) EXPENSE -->
-        <div class="budget-subsection">
-          <h2 class="budget-subsection-title">💸 ব্যয়ের বাজেট</h2>
-          <div id="budgetProgress" class="budget-charts">
-            <div class="gauge-item">
-              <div class="gauge-canvas-wrap">
-                <canvas id="gaugeExpense"></canvas>
-                <div class="gauge-center"><span class="pct" id="gaugeExpPct">0%</span><span class="lbl">ব্যয়<br>বাজেট</span></div>
-              </div>
-              <div class="gauge-foot">খরচ <b id="gaugeExpAmt">৳০</b><br><span class="en" style="font-size:10px">/ বাজেট </span><b id="gaugeExpGoal" class="en" style="font-size:11px">৳০</b></div>
-            </div>
-          </div>
         </div>
       </div>
 
