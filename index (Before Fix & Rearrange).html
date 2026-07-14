@@ -741,24 +741,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 .doc-file-preview .file-name { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .doc-file-preview .file-meta { font-size:11px; color:var(--sil2); }
 
-/* ── Enhanced pre-upload preview: thumbnail + editable filename ── */
-.doc-file-preview.rich { align-items:flex-start; flex-wrap:wrap; }
-.doc-file-preview .file-thumb { width:52px; height:52px; border-radius:8px; object-fit:cover; background:var(--blk2); border:1px solid var(--bd); flex-shrink:0; }
-.doc-file-preview .file-name-edit { width:100%; font-size:13px; font-weight:600; background:var(--blk2); border:1px solid var(--bd2); border-radius:6px; padding:6px 8px; color:var(--txt); margin-top:4px; }
-.doc-file-preview .file-name-edit:focus { outline:none; border-color:var(--ind); }
-
-/* ── Universal in-app File Preview Modal (view / rename / print / download) ── */
-.file-preview-body { display:flex; flex-direction:column; gap:14px; min-height:200px; }
-.file-preview-stage { display:flex; align-items:center; justify-content:center; background:var(--blk3); border:1px solid var(--bd); border-radius:10px; min-height:260px; max-height:60vh; overflow:auto; padding:10px; }
-.file-preview-stage img { max-width:100%; max-height:56vh; border-radius:6px; }
-.file-preview-stage iframe { width:100%; height:56vh; border:none; border-radius:6px; background:#fff; }
-.file-preview-stage .fp-fallback { text-align:center; color:var(--sil); padding:32px 12px; }
-.file-preview-stage .fp-fallback .fp-icon { font-size:40px; margin-bottom:10px; }
-.file-preview-loading { display:flex; align-items:center; justify-content:center; gap:8px; color:var(--sil); font-size:13px; padding:40px 0; }
-.file-preview-rename-row { display:flex; gap:8px; align-items:center; }
-.file-preview-rename-row input { flex:1; }
-.file-preview-actions { display:flex; gap:8px; flex-wrap:wrap; }
-
 .upload-dropzone { border:2px dashed var(--bd2); border-radius:var(--r); padding:24px; text-align:center; cursor:pointer; transition:all 0.2s; background:rgba(79,70,229,0.03); }
 .upload-dropzone:hover, .upload-dropzone.dragover { border-color:var(--ind); background:rgba(79,70,229,0.08); }
 .upload-dropzone .uz-icon { font-size:32px; margin-bottom:8px; }
@@ -1842,15 +1824,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
     </div>
 
-    <!-- Tab Management (main nav — rename + reorder) -->
-    <div class="settings-section">
-      <h3>📑 ট্যাব ম্যানেজমেন্ট</h3>
-      <div class="card">
-        <p style="font-size:12px;color:var(--sil2);margin-bottom:12px">উপরের নেভিগেশনের ট্যাবগুলোর নাম বদলাও, বা টেনে (drag) ক্রম পরিবর্তন করো। সব ডিভাইসে সিঙ্ক হবে।</p>
-        <div id="tabManageList" style="margin-bottom:4px"></div>
-      </div>
-    </div>
-
     <!-- Custom Tabs -->
     <div class="settings-section">
       <h3>🧩 Custom Tabs (Web App যোগ করুন)</h3>
@@ -2207,27 +2180,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   </div>
 </div>
 
-<!-- UNIVERSAL FILE PREVIEW MODAL — view / rename / print / download any uploaded file -->
-<div class="modal-overlay" id="filePreviewModal">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-header"><h3 id="fpModalTitle">📎 ফাইল প্রিভিউ</h3><button class="modal-close" onclick="closeModal('filePreviewModal')">✕</button></div>
-    <div class="modal-body file-preview-body">
-      <div class="file-preview-rename-row">
-        <input type="text" class="form-input" id="fpFileNameInput" placeholder="ফাইলের নাম">
-        <button class="btn btn-ghost btn-sm" onclick="renameFilePreviewFile()">✏️ Rename</button>
-      </div>
-      <div class="file-preview-stage" id="fpStage">
-        <div class="file-preview-loading">⏳ লোড হচ্ছে…</div>
-      </div>
-      <div class="file-preview-actions">
-        <button class="btn btn-ghost btn-sm" id="fpPrintBtn" onclick="printFilePreviewFile()">🖨️ প্রিন্ট</button>
-        <button class="btn btn-ghost btn-sm" id="fpDownloadBtn" onclick="downloadFilePreviewFile()">⬇️ ডাউনলোড</button>
-        <a class="btn btn-ghost btn-sm" id="fpDriveLink" href="#" target="_blank" style="text-decoration:none">🔗 Drive-এ খুলুন</a>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- MANAGE DOC CATEGORIES MODAL -->
 <div class="modal-overlay" id="manageDocCategoriesModal">
   <div class="modal" style="max-width:460px">
@@ -2476,25 +2428,6 @@ function DEFAULT_BILL_CATEGORIES() {
   ];
 }
 
-// ─── MAIN TAB NAV: default label/icon/order seed ───
-// id = internal routing key (never shown, never changes — switchTab(id)
-// and every data-tab="id" attribute depend on this staying stable).
-// label = what the user sees, editable in Settings → ট্যাব ম্যানেজমেন্ট.
-function DEFAULT_TAB_CONFIG() {
-  return [
-    { id:'dashboard', icon:'🏠', label:'ড্যাশবোর্ড' },
-    { id:'bills',     icon:'📃', label:'Bills' },
-    { id:'entry',     icon:'➕', label:'এন্ট্রি' },
-    { id:'finance',   icon:'💰', label:'Finance' },
-    { id:'history',   icon:'📅', label:'মাসিক হিসাব' },
-    { id:'projects',  icon:'🔨', label:'Home Projects' },
-    { id:'tasks',     icon:'✅', label:'Tasks' },
-    { id:'shopping',  icon:'🛒', label:'Shopping' },
-    { id:'docs',      icon:'📄', label:'Documents' },
-    { id:'settings',  icon:'⚙️', label:'Settings' }
-  ].map((t,i)=>({ ...t, order:i }));
-}
-
 // ─── DEFAULT CONFIG ───
 let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {
   webAppUrl:       '',
@@ -2525,7 +2458,6 @@ let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {
   docCategories:      ['সাধারণ নোট','Warranty','Bills','Appliances','Insurance','Documents','Others'],
   shoppingLists:      ['নিয়মিত বাজার','জরুরি কেনাকাটা','মাসিক বাজার'],
   billCategories:     DEFAULT_BILL_CATEGORIES(),
-  tabConfig:          DEFAULT_TAB_CONFIG(),
   customTabs:         []
 };
 
@@ -2575,24 +2507,6 @@ ensureBillCategoryFinanceCategories();
 if (!Array.isArray(APP_DATA.bills)) {
   APP_DATA.bills = [];
 }
-
-// Normalize CONFIG.tabConfig: seed it for existing users who saved CONFIG
-// before this feature existed, and — if a future update ever adds a new
-// tab id — append it (at the end) without losing the user's existing
-// custom labels/order for tabs they already have.
-(function normalizeTabConfig(){
-  const defaults = DEFAULT_TAB_CONFIG();
-  if (!Array.isArray(CONFIG.tabConfig) || !CONFIG.tabConfig.length) {
-    CONFIG.tabConfig = defaults;
-    return;
-  }
-  const known = new Set(CONFIG.tabConfig.map(t=>t.id));
-  let nextOrder = CONFIG.tabConfig.length;
-  defaults.forEach(d => { if (!known.has(d.id)) CONFIG.tabConfig.push({ ...d, order: nextOrder++ }); });
-  // Backfill icon on any saved entries that predate icons being stored
-  CONFIG.tabConfig.forEach(t => { if (!t.icon) { const d = defaults.find(x=>x.id===t.id); if (d) t.icon = d.icon; } });
-  CONFIG.tabConfig.sort((a,b)=>a.order-b.order);
-})();
 
 // ── BREAK-SAVINGS FEATURE: dedicated income category ──
 // Withdrawals from savings are recorded as an income entry in this
@@ -2986,29 +2900,6 @@ function updateGreeting() {
 // ──────────────────────────────────────────
 // TAB SWITCHING
 // ──────────────────────────────────────────
-// ── MAIN TAB NAV: rebuilds #mainTabNav from CONFIG.tabConfig so Settings
-// → ট্যাব ম্যানেজমেন্ট (rename + drag/drop reorder) actually changes what
-// the user sees here. Only label text + order come from CONFIG.tabConfig —
-// each button's data-tab id (used by switchTab/_doSwitchTab everywhere)
-// and icon stay exactly as before, so routing/state logic is untouched. ──
-function renderMainTabNav() {
-  const nav = document.getElementById('mainTabNav');
-  if (!nav) return;
-  const activeId = document.querySelector('.tab-btn.active')?.dataset.tab || 'dashboard';
-  const order = (CONFIG.tabConfig && CONFIG.tabConfig.length) ? CONFIG.tabConfig : DEFAULT_TAB_CONFIG();
-  nav.innerHTML = order.map(t => {
-    const extra = t.id === 'bills'
-      ? ' style="position:relative"'
-      : '';
-    const badge = t.id === 'bills'
-      ? `<span class="tab-notif-badge" id="billsNotifBadge" style="display:none">0</span>`
-      : '';
-    return `<button class="tab-btn ${t.id===activeId?'active':''}" data-tab="${t.id}" onclick="switchTab('${t.id}')"${extra}>
-      <span class="tab-icon">${t.icon||'📌'}</span> ${t.label||t.id}${badge}
-    </button>`;
-  }).join('');
-}
-
 function switchTab(tabId) {
   if (tabId === 'settings') {
     openSettingsLock('Settings-এ ঢুকতে Admin পাসওয়ার্ড দিন', () => {
@@ -3053,116 +2944,6 @@ document.querySelectorAll('.tab-btn:not(.add-tab-btn)').forEach(btn => {
 // ──────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-
-// ══════════════════════════════════════════════════════════
-// UNIVERSAL FILE PREVIEW MODAL — used by every tab (Entry,
-// Projects, Tasks, Shopping, Documents) to view/rename/print/
-// download a Drive-uploaded file in-app, without needing to
-// open Google Drive itself. Fetches the file's raw bytes via
-// the Apps Script `getFile` action so it works even when the
-// viewer isn't signed into the same Google account.
-// ══════════════════════════════════════════════════════════
-let fpCurrentFile = null; // { fileId, fileName, mimeType, base64 }
-
-async function openFilePreviewModal(fileId, fileName) {
-  if (!fileId) return;
-  fpCurrentFile = { fileId, fileName: fileName||'ফাইল', mimeType:null, base64:null };
-  document.getElementById('fpModalTitle').textContent = '📎 ' + (fileName||'ফাইল প্রিভিউ');
-  document.getElementById('fpFileNameInput').value = fileName||'';
-  document.getElementById('fpDriveLink').href = `https://drive.google.com/file/d/${fileId}/view`;
-  document.getElementById('fpStage').innerHTML = '<div class="file-preview-loading">⏳ লোড হচ্ছে…</div>';
-  openModal('filePreviewModal');
-
-  if (!CONFIG.webAppUrl) { toast('Apps Script URL Settings-এ সেট করুন','warning'); return; }
-  try {
-    const resp = await fetch(`${CONFIG.webAppUrl}?action=getFile`,{
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ fileId })
-    });
-    const data = await resp.json();
-    if (data.status !== 'ok') {
-      document.getElementById('fpStage').innerHTML = `<div class="fp-fallback"><div class="fp-icon">⚠️</div>প্রিভিউ লোড করা যায়নি — Drive-এ খুলে দেখুন।</div>`;
-      return;
-    }
-    fpCurrentFile.mimeType = data.mimeType;
-    fpCurrentFile.base64   = data.base64;
-    if (!fpCurrentFile.fileName || fpCurrentFile.fileName === 'ফাইল') {
-      fpCurrentFile.fileName = data.fileName;
-      document.getElementById('fpFileNameInput').value = data.fileName;
-      document.getElementById('fpModalTitle').textContent = '📎 ' + data.fileName;
-    }
-    renderFilePreviewStage();
-  } catch(e) {
-    document.getElementById('fpStage').innerHTML = `<div class="fp-fallback"><div class="fp-icon">⚠️</div>ইন্টারনেট চেক করুন।</div>`;
-  }
-}
-
-function renderFilePreviewStage() {
-  const { mimeType, base64, fileName } = fpCurrentFile;
-  const stage = document.getElementById('fpStage');
-  const dataUrl = `data:${mimeType};base64,${base64}`;
-  if ((mimeType||'').startsWith('image/')) {
-    stage.innerHTML = `<img src="${dataUrl}" alt="${fileName}">`;
-  } else if (mimeType === 'application/pdf') {
-    stage.innerHTML = `<iframe src="${dataUrl}"></iframe>`;
-  } else {
-    stage.innerHTML = `<div class="fp-fallback"><div class="fp-icon">📁</div>এই ফাইলের ধরনের জন্য ইন-অ্যাপ প্রিভিউ সমর্থিত না।<br>ডাউনলোড করে দেখুন।</div>`;
-  }
-}
-
-/** Renames the currently previewed file on Drive, and syncs the new name into every local record that references this same driveFileId. */
-async function renameFilePreviewFile() {
-  if (!fpCurrentFile) return;
-  const newName = document.getElementById('fpFileNameInput').value.trim();
-  if (!newName) { toast('ফাইলের নাম দিন','error'); return; }
-  if (!CONFIG.webAppUrl) { toast('Apps Script URL Settings-এ সেট করুন','warning'); return; }
-  try {
-    const resp = await fetch(`${CONFIG.webAppUrl}?action=renameFile`,{
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ fileId: fpCurrentFile.fileId, newName })
-    });
-    const data = await resp.json();
-    if (data.status !== 'ok') { toast(data.msg||'Rename ব্যর্থ হয়েছে','error'); return; }
-    fpCurrentFile.fileName = data.fileName;
-    document.getElementById('fpModalTitle').textContent = '📎 ' + data.fileName;
-    // Sync the new name into every local record sharing this driveFileId
-    [APP_DATA.entries, APP_DATA.projects, APP_DATA.tasks, APP_DATA.shopping, APP_DATA.docs].forEach(list=>{
-      (list||[]).forEach(rec=>{ if (rec.driveFileId === fpCurrentFile.fileId) rec.driveFileName = data.fileName; });
-    });
-    saveData();
-    renderDashboard(); renderProjects(); renderTasks(); renderShopping(); renderDocs();
-    pushDataToBackend();
-    toast('✏️ ফাইলের নাম আপডেট হয়েছে!');
-  } catch(e) { toast('ইন্টারনেট চেক করুন','error'); }
-}
-
-/** Opens the currently-loaded preview in a new window and triggers the browser print dialog. */
-function printFilePreviewFile() {
-  if (!fpCurrentFile || !fpCurrentFile.base64) { toast('ফাইল এখনো লোড হয়নি','warning'); return; }
-  const { mimeType, base64, fileName } = fpCurrentFile;
-  const dataUrl = `data:${mimeType};base64,${base64}`;
-  if ((mimeType||'').startsWith('image/')) {
-    const win = window.open('','_blank');
-    win.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0"><img src="${dataUrl}" style="max-width:100%" onload="window.print()"></body></html>`);
-    win.document.close();
-  } else if (mimeType === 'application/pdf') {
-    const win = window.open('','_blank');
-    win.document.write(`<html><head><title>${fileName}</title></head><body style="margin:0"><iframe src="${dataUrl}" style="width:100%;height:100vh;border:none" onload="this.contentWindow.print()"></iframe></body></html>`);
-    win.document.close();
-  } else {
-    toast('এই ফাইলের ধরন সরাসরি প্রিন্ট সমর্থন করে না — ডাউনলোড করে প্রিন্ট করুন','warning');
-  }
-}
-
-/** Downloads the currently-loaded preview file to the device. */
-function downloadFilePreviewFile() {
-  if (!fpCurrentFile || !fpCurrentFile.base64) { toast('ফাইল এখনো লোড হয়নি','warning'); return; }
-  const { mimeType, base64, fileName } = fpCurrentFile;
-  const a = document.createElement('a');
-  a.href = `data:${mimeType};base64,${base64}`;
-  a.download = fileName || 'file';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if(e.target===o) closeModal(o.id); });
 });
@@ -3233,69 +3014,26 @@ function submitEntry() { showEntryPreviewModal(); }
 // grouped by category — instead of being locked inside one tab only.
 // ══════════════════════════════════════════════════════════
 let miniFileToUpload = { entry:null, project:null, task:null, shop:null };
-let miniFileCustomName = { entry:null, project:null, task:null, shop:null };
-let miniFileDataUrl = { entry:null, project:null, task:null, shop:null };
 
-/** Drive subfolder name each mini-upload point should file into. */
-const MINI_UPLOAD_FOLDER = {
-  entry: 'Entry Attachments', project: 'Project Attachments',
-  task: 'Task Attachments', shop: 'Shopping Receipts'
-};
-
-/** Escapes a string for safe use inside a single-quoted inline onclick="...('…')" attribute. */
-function jsStr(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
-
-/** Reads a File as a base64 data-URL (used for both upload payload and instant thumbnail preview). */
-function fileToDataURL(file) {
-  return new Promise(res=>{
-    const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file);
-  });
-}
-
-async function handleMiniFileSelect(kind, e) {
+function handleMiniFileSelect(kind, e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   miniFileToUpload[kind] = file;
-  miniFileCustomName[kind] = file.name;
-  const dataUrl = await fileToDataURL(file);
-  miniFileDataUrl[kind] = dataUrl;
-  renderMiniFilePreview(kind, file, dataUrl);
-}
-
-/** Rich pre-upload preview: image thumbnail (or file icon) + editable filename + remove. */
-function renderMiniFilePreview(kind, file, dataUrl) {
   const el = document.getElementById(kind+'FilePreview');
-  if (!el) return;
-  const isImage = (file.type||'').startsWith('image/');
-  const thumb = isImage
-    ? `<img class="file-thumb" src="${dataUrl}" alt="preview">`
-    : `<span class="file-icon">${(file.type||'').includes('pdf')?'📕':'📎'}</span>`;
-  el.innerHTML = `
-    <div class="doc-file-preview rich">
-      ${thumb}
-      <div class="file-info">
-        <input type="text" class="file-name-edit" value="${(miniFileCustomName[kind]||file.name).replace(/"/g,'&quot;')}"
-               oninput="miniFileCustomName['${kind}']=this.value" placeholder="ফাইলের নাম">
-        <div class="file-meta">${(file.size/1024).toFixed(1)} KB</div>
-      </div>
+  if (el) el.innerHTML = `
+    <div class="doc-file-preview"><span class="file-icon">📎</span>
+      <div class="file-info"><div class="file-name">${file.name}</div><div class="file-meta">${(file.size/1024).toFixed(1)} KB</div></div>
       <button type="button" class="btn-icon danger" onclick="clearMiniFile('${kind}')">✕</button>
     </div>`;
 }
 
 function clearMiniFile(kind) {
   miniFileToUpload[kind] = null;
-  miniFileCustomName[kind] = null;
-  miniFileDataUrl[kind] = null;
   const prev = document.getElementById(kind+'FilePreview'); if (prev) prev.innerHTML = '';
   const inp  = document.getElementById(kind+'FileInput');   if (inp)  inp.value = '';
 }
 
-/**
- * Uploads a file to Drive under a category subfolder (so files don't all
- * dump into one flat folder), optionally with a user-edited filename.
- * Returns {fileId, fileName} or null on failure.
- */
-async function uploadFileToDriveSimple(file, category, customName) {
+async function uploadFileToDriveSimple(file) {
   if (!CONFIG.webAppUrl || !CONFIG.driveFolderId) {
     toast('Apps Script URL এবং Drive Folder ID Settings-এ সেট করুন','warning'); return null;
   }
@@ -3305,14 +3043,10 @@ async function uploadFileToDriveSimple(file, category, customName) {
   try {
     const resp = await fetch(`${CONFIG.webAppUrl}?action=uploadFile`,{
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({
-        fileName: (customName||file.name).trim() || file.name,
-        mimeType: file.type, base64, folderId: CONFIG.driveFolderId, category: category||''
-      })
+      body: JSON.stringify({fileName:file.name, mimeType:file.type, base64, folderId:CONFIG.driveFolderId})
     });
     const data = await resp.json();
-    if (data.status !== 'ok') { toast(data.msg||'Upload ব্যর্থ হয়েছে','error'); return null; }
-    return { fileId: data.fileId, fileName: data.fileName };
+    return data.fileId || null;
   } catch(e) { toast('Upload ব্যর্থ হয়েছে — ইন্টারনেট চেক করুন','error'); return null; }
 }
 
@@ -3320,39 +3054,35 @@ async function uploadFileToDriveSimple(file, category, customName) {
  * Uploads the pending file (if any) attached for `kind` and, on success,
  * ALSO creates a matching Documents-tab entry (category + a tag noting
  * which tab it came from) — this is what makes it show up under
- * Documents automatically. Files are organized into a category-based
- * Drive subfolder rather than one flat folder. Returns
- * {driveFileId, driveFileName} (both null if there was nothing to upload).
+ * Documents automatically. Returns {driveFileId, driveFileName}
+ * (both null if there was nothing to upload).
  */
 async function uploadMiniFileAndLinkDoc(kind, { title, docCategory, sourceLabel }) {
   const file = miniFileToUpload[kind];
   if (!file) return { driveFileId: null, driveFileName: null };
   toast('📎 ফাইল Drive-এ আপলোড হচ্ছে…');
-  const result = await uploadFileToDriveSimple(file, MINI_UPLOAD_FOLDER[kind]||docCategory, miniFileCustomName[kind]);
-  const driveFileId = result ? result.fileId : null;
-  const driveFileName = result ? result.fileName : null;
+  const driveFileId = await uploadFileToDriveSimple(file);
   if (driveFileId) {
     APP_DATA.docs.unshift({
       id: uid(), title, category: docCategory,
       type: 'other', tags: [sourceLabel],
       content: `${sourceLabel} থেকে স্বয়ংক্রিয়ভাবে সংযুক্ত হয়েছে।`,
-      driveFileId, driveFileName,
+      driveFileId, driveFileName: file.name,
       updatedAt: new Date().toISOString()
     });
     saveData();
   }
   clearMiniFile(kind);
-  return { driveFileId, driveFileName };
+  return { driveFileId, driveFileName: driveFileId ? file.name : null };
 }
 
-/** Shows an existing attachment (edit mode) with a preview/rename/print button. */
-function showExistingMiniFile(kind, fileName, fileId) {
+/** Shows an existing attachment (edit mode) as a read-only preview line. */
+function showExistingMiniFile(kind, fileName) {
   const el = document.getElementById(kind+'FilePreview');
   if (!el) return;
   el.innerHTML = fileName
     ? `<div class="doc-file-preview"><span class="file-icon">📎</span>
         <div class="file-info"><div class="file-name">${fileName}</div><div class="file-meta">আগে থেকে সংযুক্ত আছে</div></div>
-        ${fileId?`<button type="button" class="btn-icon" onclick="openFilePreviewModal('${fileId}','${jsStr(fileName)}')" title="প্রিভিউ / রিনেম / প্রিন্ট">👁️</button>`:''}
       </div>`
     : '';
 }
@@ -3996,7 +3726,7 @@ function renderDashboard() {
         <div style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.title}</div>
         <div style="font-size:11px;color:var(--sil2)">${d.category}${d.driveFileName?' · 📎 '+d.driveFileName:''}</div>
       </div>
-      ${d.driveFileId?`<button class="btn-icon" onclick="openFilePreviewModal('${d.driveFileId}','${jsStr(d.driveFileName||d.title)}')" title="প্রিভিউ দেখুন">👁️</button>`:''}
+      ${d.driveFileId?`<a class="btn-icon" href="https://drive.google.com/file/d/${d.driveFileId}/view" target="_blank" title="Drive-এ দেখুন">🔗</a>`:''}
     </div>
   `).join('') : '<div class="empty-state" style="padding:20px"><div class="empty-icon">📄</div><p>এখনো কোনো ডকুমেন্ট নেই</p></div>';
 }
@@ -4334,7 +4064,7 @@ function openProjectModal(id) {
     document.getElementById('pmBudget').value     = p.budget||'';
     document.getElementById('pmPriority').value   = p.priority||'medium';
     document.getElementById('pmNotes').value      = p.notes||'';
-    showExistingMiniFile('project', p.driveFileName, p.driveFileId);
+    showExistingMiniFile('project', p.driveFileName);
   } else {
     ['pmName','pmStartDate','pmEndDate','pmBudget','pmNotes'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('pmStatus').value='planning'; document.getElementById('pmPriority').value='medium';
@@ -4464,7 +4194,7 @@ function renderProjects() {
       </div>
       ${p.budget>0?`<div class="progress-wrap"><div class="progress-label"><span>বাজেট ব্যবহার</span><span class="en">${costPct}%</span></div><div class="progress-track"><div class="progress-fill ${costPct>=100?'red':costPct>=80?'gold':''}" style="width:${costPct}%"></div></div></div>`:''}
       ${p.notes?`<div class="project-notes">📝 ${p.notes}</div>`:''}
-      ${p.driveFileId?`<button class="badge badge-sil" style="border:none;cursor:pointer;display:inline-flex;gap:4px;margin-top:6px" onclick="openFilePreviewModal('${p.driveFileId}','${jsStr(p.driveFileName||p.name)}')">📎 সংযুক্ত ডকুমেন্ট দেখুন</button>`:''}
+      ${p.driveFileId?`<a href="https://drive.google.com/file/d/${p.driveFileId}/view" target="_blank" class="badge badge-sil" style="text-decoration:none;display:inline-flex;gap:4px;margin-top:6px">📎 সংযুক্ত ডকুমেন্ট দেখুন</a>`:''}
       ${costsHtml}
     </div>`;
   }).join('');
@@ -4569,7 +4299,7 @@ function openTaskModal(id) {
     document.getElementById('tmText').value=t.text; document.getElementById('tmDue').value=t.due||'';
     document.getElementById('tmPriority').value=t.priority; document.getElementById('tmMember').value=t.member;
     document.getElementById('tmCategory').value=t.category||'Home'; document.getElementById('tmNotes').value=t.notes||'';
-    showExistingMiniFile('task', t.driveFileName, t.driveFileId);
+    showExistingMiniFile('task', t.driveFileName);
   } else {
     ['tmText','tmDue','tmNotes'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('tmPriority').value='medium'; document.getElementById('tmMember').value=getDeviceDefaultMember();
@@ -4624,7 +4354,7 @@ function filterTasks() {
       <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
       <div class="priority-dot priority-${t.priority}"></div>
       <span class="task-text">${t.text}</span>
-      <div class="task-meta"><span class="en">${t.due||''}</span><span class="badge badge-sil">${t.member}</span><span>${catI[t.category]||'📌'}</span>${t.driveFileId?`<button class="btn-icon" style="width:auto;height:auto" onclick="openFilePreviewModal('${t.driveFileId}','${jsStr(t.driveFileName||t.text)}')" title="সংযুক্ত ডকুমেন্ট">📎</button>`:''}</div>
+      <div class="task-meta"><span class="en">${t.due||''}</span><span class="badge badge-sil">${t.member}</span><span>${catI[t.category]||'📌'}</span>${t.driveFileId?`<a href="https://drive.google.com/file/d/${t.driveFileId}/view" target="_blank" title="সংযুক্ত ডকুমেন্ট">📎</a>`:''}</div>
       <div style="display:flex;gap:4px"><button class="btn-icon" onclick="openTaskModal('${t.id}')">✏️</button><button class="btn-icon danger" onclick="deleteTask('${t.id}')">🗑</button></div>
     </div>`).join(''):
     '<div class="empty-state"><div class="empty-icon">✅</div><h3>কোনো task নেই</h3><p>নতুন task যোগ করো</p></div>';
@@ -4646,7 +4376,7 @@ function openShopModal(id) {
     document.getElementById('smName').value=s.name; document.getElementById('smQty').value=s.qty||'';
     document.getElementById('smPrice').value=s.price||''; document.getElementById('smCategory').value=s.category||'Grocery';
     document.getElementById('smList').value=s.list; document.getElementById('smNote').value=s.note||'';
-    showExistingMiniFile('shop', s.driveFileName, s.driveFileId);
+    showExistingMiniFile('shop', s.driveFileName);
   } else {
     ['smName','smQty','smPrice','smNote'].forEach(i=>document.getElementById(i).value='');
   }
@@ -4779,7 +4509,7 @@ function renderShopping() {
           <span class="shop-qty">${s.qty||''}</span>
           ${s.price?`<span class="shop-price">${fmtBDT(s.price)}</span>`:''}
           ${s.note?`<span style="font-size:11px;color:var(--sil2)">${s.note}</span>`:''}
-          ${s.driveFileId?`<button class="btn-icon" style="width:auto;height:auto" onclick="openFilePreviewModal('${s.driveFileId}','${jsStr(s.driveFileName||s.name)}')" title="সংযুক্ত রসিদ">📎</button>`:''}
+          ${s.driveFileId?`<a href="https://drive.google.com/file/d/${s.driveFileId}/view" target="_blank" title="সংযুক্ত রসিদ">📎</a>`:''}
           <div style="display:flex;gap:4px;margin-left:auto">
             <button class="btn-icon" onclick="openShopModal('${s.id}')">✏️</button>
             <button class="btn-icon danger" onclick="deleteShopItem('${s.id}')">🗑</button>
@@ -4804,7 +4534,7 @@ function openDocModal(id) {
   editingDocId=id||null;
   populateDocCategorySelects();
   document.getElementById('docModalTitle').textContent=id?'✏️ Document সম্পাদনা':'📄 নতুন Document / Note';
-  docFileToUpload=null; docFileCustomName=null;
+  docFileToUpload=null;
   document.getElementById('docFilePreviewArea').innerHTML='';
   document.getElementById('docUploadProgress').classList.remove('show');
   if(id){
@@ -4812,13 +4542,6 @@ function openDocModal(id) {
     document.getElementById('dmTitle').value=d.title; document.getElementById('dmCategory').value=d.category;
     document.getElementById('dmType').value=d.type; document.getElementById('dmTags').value=(d.tags||[]).join(', ');
     document.getElementById('dmContent').value=d.content;
-    if(d.driveFileId){
-      document.getElementById('docFilePreviewArea').innerHTML=`
-        <div class="doc-file-preview"><span class="file-icon">📎</span>
-          <div class="file-info"><div class="file-name">${d.driveFileName||'ফাইল'}</div><div class="file-meta">আগে থেকে সংযুক্ত আছে</div></div>
-          <button type="button" class="btn-icon" onclick="openFilePreviewModal('${d.driveFileId}','${jsStr(d.driveFileName||d.title)}')" title="প্রিভিউ / রিনেম / প্রিন্ট">👁️</button>
-        </div>`;
-    }
   } else {
     ['dmTitle','dmTags','dmContent'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('dmType').value='note';
@@ -4832,31 +4555,18 @@ function handleDocFileDrop(e) {
   if(e.dataTransfer.files[0]) prepareDocUpload(e.dataTransfer.files[0]);
 }
 
-let docFileCustomName = null;
-
-async function prepareDocUpload(file) {
+function prepareDocUpload(file) {
   docFileToUpload=file;
-  docFileCustomName=file.name;
-  const isImage=(file.type||'').startsWith('image/');
-  const dataUrl = isImage ? await fileToDataURL(file) : null;
-  const thumb = isImage
-    ? `<img class="file-thumb" src="${dataUrl}" alt="preview">`
-    : `<span class="file-icon">${(file.type||'').includes('pdf')?'📕':'📎'}</span>`;
   document.getElementById('docFilePreviewArea').innerHTML=`
-    <div class="doc-file-preview rich">
-      ${thumb}
-      <div class="file-info">
-        <input type="text" class="file-name-edit" value="${file.name.replace(/"/g,'&quot;')}"
-               oninput="docFileCustomName=this.value" placeholder="ফাইলের নাম">
-        <div class="file-meta">${(file.size/1024).toFixed(1)} KB · ${file.type||'unknown'}</div>
-      </div>
+    <div class="doc-file-preview"><span class="file-icon">📎</span>
+      <div class="file-info"><div class="file-name">${file.name}</div><div class="file-meta">${(file.size/1024).toFixed(1)} KB · ${file.type||'unknown'}</div></div>
       <button class="btn-icon danger" onclick="clearDocFile()">✕</button>
     </div>`;
 }
 
-function clearDocFile() { docFileToUpload=null; docFileCustomName=null; document.getElementById('docFilePreviewArea').innerHTML=''; document.getElementById('docFileInput').value=''; }
+function clearDocFile() { docFileToUpload=null; document.getElementById('docFilePreviewArea').innerHTML=''; document.getElementById('docFileInput').value=''; }
 
-async function uploadDocToDrive(file, category) {
+async function uploadDocToDrive(file) {
   if (!CONFIG.webAppUrl || !CONFIG.driveFolderId) {
     toast('Apps Script URL এবং Drive Folder ID সেট করুন','warning'); return null;
   }
@@ -4864,9 +4574,8 @@ async function uploadDocToDrive(file, category) {
   const fill     = document.getElementById('docUploadFill');
   const pct      = document.getElementById('docUploadPct');
   const fname    = document.getElementById('docUploadFileName');
-  const finalName = (docFileCustomName||file.name).trim() || file.name;
   progress.classList.add('show');
-  fname.textContent=finalName; fill.style.width='0%'; pct.textContent='0%';
+  fname.textContent=file.name; fill.style.width='0%'; pct.textContent='0%';
   // Read file as base64
   const base64 = await new Promise(res=>{
     const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.readAsDataURL(file);
@@ -4876,12 +4585,11 @@ async function uploadDocToDrive(file, category) {
   try {
     const resp=await fetch(`${CONFIG.webAppUrl}?action=uploadFile`,{
       method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({fileName:finalName,mimeType:file.type,base64,folderId:CONFIG.driveFolderId,category:category||''})
+      body:JSON.stringify({fileName:file.name,mimeType:file.type,base64,folderId:CONFIG.driveFolderId})
     });
     const data=await resp.json();
     clearInterval(interval); fill.style.width='100%'; pct.textContent='100%';
-    if (data.status !== 'ok') { toast(data.msg||'Upload ব্যর্থ','error'); return null; }
-    return { fileId: data.fileId, fileName: data.fileName };
+    return data.fileId||null;
   } catch(e) { clearInterval(interval); fill.style.width='0%'; toast('Upload ব্যর্থ','error'); return null; }
 }
 
@@ -4889,21 +4597,15 @@ async function saveDoc() {
   const title=document.getElementById('dmTitle').value.trim();
   const content=document.getElementById('dmContent').value.trim();
   if(!title||!content){toast('শিরোনাম ও বিষয়বস্তু দিন','error');return;}
-  const category=document.getElementById('dmCategory').value;
   let driveFileId=editingDocId?(APP_DATA.docs.find(d=>d.id===editingDocId)?.driveFileId||null):null;
-  let uploadedName=null;
-  if(docFileToUpload){
-    const result=await uploadDocToDrive(docFileToUpload, category);
-    driveFileId = result ? result.fileId : null;
-    uploadedName = result ? result.fileName : null;
-  }
+  if(docFileToUpload) driveFileId=await uploadDocToDrive(docFileToUpload);
   const doc={
     id:editingDocId||uid(),title,
-    category,
+    category:document.getElementById('dmCategory').value,
     type:document.getElementById('dmType').value,
     tags:document.getElementById('dmTags').value.split(',').map(t=>t.trim()).filter(Boolean),
     content,driveFileId,
-    driveFileName:uploadedName?uploadedName:(editingDocId?(APP_DATA.docs.find(d=>d.id===editingDocId)?.driveFileName||null):null),
+    driveFileName:docFileToUpload?docFileToUpload.name:(editingDocId?(APP_DATA.docs.find(d=>d.id===editingDocId)?.driveFileName||null):null),
     settled:editingDocId?(APP_DATA.docs.find(d=>d.id===editingDocId)?.settled||false):false,
     updatedAt:new Date().toISOString()
   };
@@ -4962,7 +4664,7 @@ function renderDocsList(docs) {
       <div class="doc-header">
         <div class="doc-title"><span class="doc-type-icon">${typeI[d.type]||'📁'}</span>${d.title}</div>
         <div style="display:flex;gap:4px">
-          ${d.driveFileId?`<button class="btn-icon" onclick="openFilePreviewModal('${d.driveFileId}','${jsStr(d.driveFileName||d.title)}')" title="প্রিভিউ / প্রিন্ট / রিনেম">👁️</button>`:''}
+          ${d.driveFileId?`<a class="btn-icon" href="https://drive.google.com/file/d/${d.driveFileId}/view" target="_blank" title="Drive-এ দেখুন">🔗</a>`:''}
           <button class="btn-icon" onclick="printDoc('${d.id}')" title="Print">🖨️</button>
           <button class="btn-icon" onclick="openDocModal('${d.id}')">✏️</button>
           <button class="btn-icon danger" onclick="deleteDoc('${d.id}')">🗑</button>
@@ -5236,9 +4938,7 @@ function renderBillCatManage() {
     </div>`).join('') + `</div>`;
   wireChipDragDrop(el, (from,to) => {
     reorderArray(CONFIG.billCategories, from, to);
-    saveConfig(); renderBillCatManage();
-    if (document.getElementById('tab-bills').classList.contains('active')) renderBills();
-    pushDataToBackend();
+    saveConfig(); renderBillCatManage(); pushDataToBackend();
   });
 }
 
@@ -5390,46 +5090,6 @@ function removeCustomTab(id) {
   });
 }
 
-// ── SETTINGS: main tab nav management (rename + reorder) ──
-function renderTabManageList() {
-  const el = document.getElementById('tabManageList');
-  if (!el) return;
-  const list = CONFIG.tabConfig && CONFIG.tabConfig.length ? CONFIG.tabConfig : DEFAULT_TAB_CONFIG();
-  el.innerHTML = `<div class="manage-chip-list">` + list.map((t,i)=>`
-    <div class="manage-chip sortable-chip" draggable="true" data-idx="${i}" style="padding:8px 8px 8px 12px">
-      <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
-      <span style="font-size:16px">${t.icon||'📌'}</span>
-      <input type="text" class="file-name-edit" style="flex:1" value="${(t.label||'').replace(/"/g,'&quot;')}"
-             oninput="updateTabLabel('${t.id}', this.value)" placeholder="ট্যাবের নাম">
-    </div>`).join('') + `</div>`;
-  wireChipDragDrop(el, (from,to) => {
-    reorderArray(CONFIG.tabConfig, from, to);
-    CONFIG.tabConfig.forEach((t,i)=>t.order=i);
-    saveConfig(); renderTabManageList(); renderMainTabNav(); pushDataToBackend();
-    toast('ট্যাবের ক্রম আপডেট হয়েছে!');
-  });
-}
-
-function updateTabLabel(tabId, newLabel) {
-  const t = (CONFIG.tabConfig||[]).find(x=>x.id===tabId);
-  if (!t) return;
-  t.label = newLabel;
-  saveConfig();
-  renderMainTabNav();
-}
-
-/** Debounced push to Sheets while typing — fires ~700ms after the user
- *  stops editing a tab's name, so we don't spam a network request per
- *  keystroke but the rename still reaches the Sheet without an explicit
- *  save button. */
-let _tabLabelSyncTimer = null;
-document.addEventListener('input', (e) => {
-  if (e.target && e.target.closest && e.target.closest('#tabManageList')) {
-    clearTimeout(_tabLabelSyncTimer);
-    _tabLabelSyncTimer = setTimeout(() => pushDataToBackend(), 700);
-  }
-});
-
 function renderCustomTabsList() {
   const div=document.getElementById('customTabsList');
   div.innerHTML=CONFIG.customTabs.length?CONFIG.customTabs.map(t=>`
@@ -5469,7 +5129,6 @@ function renderSettings() {
   renderCatList('expense','expenseCatList');
   renderCatList('income','incomeCatList');
   renderCatList('savings','savingsCatList');
-  renderTabManageList();
   renderCustomTabsList();
   // Populate member selects everywhere
   ['entryMember','tmMember'].forEach(id=>{
@@ -5488,53 +5147,7 @@ function updateBackendStatus() {
   if(stxt) stxt.textContent=online?'Connected':'Not configured';
 }
 
-/**
- * Saving the Web App URL now does a full round-trip immediately instead
- * of just storing the string and waiting for the next scheduled sync:
- *   1. Basic format validation (must look like a real Apps Script /exec URL)
- *   2. ?action=ping — confirms the URL is actually reachable/valid
- *   3. performSafeSync() — full bidirectional sync right away
- *   4. loadSettingsFromBackend() — pulls Folder ID / Reset Email (and
- *      password hashes / budget goals) from the Sheet and populates the
- *      Settings fields, since the Sheet is the single source of truth.
- * Any failure at step 2 stops here with a specific error message — sync
- * never fails silently.
- */
-function saveWebAppUrl() {
-  const url = document.getElementById('settingsWebAppUrl').value.trim();
-  if (!url) { toast('Web App URL দিন','error'); return; }
-  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/i.test(url)) {
-    toast('⚠️ এটা একটা সঠিক Apps Script Web App URL মনে হচ্ছে না (…/exec দিয়ে শেষ হওয়া উচিত)','error');
-    return;
-  }
-  CONFIG.webAppUrl = url;
-  saveConfig();
-  updateBackendStatus();
-  const dot = document.getElementById('settingsStatusDot');
-  if (dot) dot.className = 'status-dot syncing';
-  toast('🔄 সংযোগ পরীক্ষা করা হচ্ছে…');
-
-  fetch(url + '?action=ping')
-    .then(r => r.json())
-    .then(d => {
-      if (d.status !== 'ok') throw new Error('bad-response');
-      toast('✅ সংযোগ সফল — সম্পূর্ণ সিঙ্ক শুরু হচ্ছে…');
-      performSafeSync(() => {
-        loadSettingsFromBackend(() => {
-          renderSettings();
-          updateBackendStatus();
-          toast('✅ সিঙ্ক সম্পূর্ণ! Folder ID ও Reset Email (থাকলে) স্বয়ংক্রিয়ভাবে বসে গেছে।');
-        });
-      }, () => {
-        if (dot) dot.className = 'status-dot offline';
-        toast('⚠️ URL সংরক্ষিত হয়েছে কিন্তু সম্পূর্ণ সিঙ্ক ব্যর্থ হয়েছে — ইন্টারনেট চেক করুন','error');
-      });
-    })
-    .catch(() => {
-      if (dot) dot.className = 'status-dot offline';
-      toast('❌ এই URL-এ সংযোগ করা যায়নি — URL ভুল, অথবা Apps Script Deploy করা হয়নি/অ্যাক্সেস "Anyone" করা নেই। URL চেক করে আবার চেষ্টা করুন।','error');
-    });
-}
+function saveWebAppUrl() { CONFIG.webAppUrl=document.getElementById('settingsWebAppUrl').value.trim(); saveConfig(); updateBackendStatus(); toast('URL সংরক্ষণ হয়েছে!'); }
 function testConnection() {
   if(!CONFIG.webAppUrl){toast('আগে URL দিন','error');return;}
   document.getElementById('settingsStatusDot').className='status-dot syncing';
@@ -5543,28 +5156,8 @@ function testConnection() {
     else throw new Error();
   }).catch(()=>{toast('Connection ব্যর্থ','error');document.getElementById('settingsStatusDot').className='status-dot offline';});
 }
-function saveDriveFolderId() {
-  CONFIG.driveFolderId=document.getElementById('driveFolderId').value.trim();
-  saveConfig();
-  toast('Drive Folder ID সংরক্ষণ হয়েছে!');
-  if (CONFIG.webAppUrl) {
-    fetch(`${CONFIG.webAppUrl}?action=saveAppSettings`,{
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ driveFolderId: CONFIG.driveFolderId })
-    }).catch(()=>{});
-  }
-}
-function saveResetEmail() {
-  CONFIG.resetEmail=document.getElementById('resetEmail').value.trim();
-  saveConfig();
-  toast('Reset Email সংরক্ষণ হয়েছে!');
-  if (CONFIG.webAppUrl) {
-    fetch(`${CONFIG.webAppUrl}?action=saveAppSettings`,{
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ resetEmail: CONFIG.resetEmail })
-    }).catch(()=>{});
-  }
-}
+function saveDriveFolderId() { CONFIG.driveFolderId=document.getElementById('driveFolderId').value.trim(); saveConfig(); toast('Drive Folder ID সংরক্ষণ হয়েছে!'); }
+function saveResetEmail() { CONFIG.resetEmail=document.getElementById('resetEmail').value.trim(); saveConfig(); toast('Reset Email সংরক্ষণ হয়েছে!'); }
 function saveGoals() {
   CONFIG.goalIncome=parseFloat(document.getElementById('goalIncome').value)||0;
   CONFIG.goalExpense=parseFloat(document.getElementById('goalExpense').value)||0;
@@ -5596,12 +5189,12 @@ function saveGoals() {
 // Pulls password hashes + budget goals from the Settings sheet on load,
 // so a password/goal changed on one device is respected on another.
 // ──────────────────────────────────────────
-function loadSettingsFromBackend(onDone) {
-  if (!CONFIG.webAppUrl) { if (typeof onDone === 'function') onDone(); return; }
+function loadSettingsFromBackend() {
+  if (!CONFIG.webAppUrl) return;
   fetch(`${CONFIG.webAppUrl}?action=getSettings`)
     .then(r => r.json())
     .then(d => {
-      if (d.status !== 'ok' || !d.settings) { if (typeof onDone === 'function') onDone(); return; }
+      if (d.status !== 'ok' || !d.settings) return;
       const s = d.settings;
       let changed = false;
       if (s.app_pass_hash   && s.app_pass_hash   !== CONFIG.appPassHash)   { CONFIG.appPassHash   = s.app_pass_hash;   changed = true; }
@@ -5610,21 +5203,14 @@ function loadSettingsFromBackend(onDone) {
       if (s.goal_expense    !== undefined && s.goal_expense    !== '') { CONFIG.goalExpense    = parseFloat(s.goal_expense)    || CONFIG.goalExpense;    changed = true; }
       if (s.goal_saving_pct !== undefined && s.goal_saving_pct !== '') { CONFIG.goalSavingPct  = parseFloat(s.goal_saving_pct) || CONFIG.goalSavingPct;  changed = true; }
       if (s.alert_threshold !== undefined && s.alert_threshold !== '') { CONFIG.alertThreshold = parseFloat(s.alert_threshold) || CONFIG.alertThreshold; changed = true; }
-      // Folder ID / Reset Email — Sheet is the single source of truth: if
-      // the Sheet has a value, it always wins over whatever was typed
-      // locally (this is what makes "paste Web App URL → everything else
-      // auto-fills" work on a brand-new device).
-      if (s.drive_folder_id !== undefined && s.drive_folder_id !== '' && s.drive_folder_id !== CONFIG.driveFolderId) { CONFIG.driveFolderId = String(s.drive_folder_id); changed = true; }
-      if (s.reset_email     !== undefined && s.reset_email     !== '' && s.reset_email     !== CONFIG.resetEmail)   { CONFIG.resetEmail   = String(s.reset_email);     changed = true; }
       if (changed) {
         saveConfig();
         // If Settings tab is currently open, refresh the visible fields
         const settingsPanel = document.getElementById('tab-settings');
         if (settingsPanel && settingsPanel.classList.contains('active')) renderSettings();
       }
-      if (typeof onDone === 'function') onDone();
     })
-    .catch(() => { if (typeof onDone === 'function') onDone(); /* offline — silently keep local values */ });
+    .catch(() => { /* offline — silently keep local values */ });
 }
 function saveEmailSettings() {
   CONFIG.email=document.getElementById('settingsEmail').value.trim();
@@ -5864,8 +5450,7 @@ function pushDataToBackend() {
     method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({
       entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
-      shopping:APP_DATA.shopping, docs:APP_DATA.docs, bills:APP_DATA.bills,
-      tabConfig:CONFIG.tabConfig
+      shopping:APP_DATA.shopping, docs:APP_DATA.docs, bills:APP_DATA.bills
     })
   }).catch(()=>{});
 }
@@ -6007,7 +5592,6 @@ function pullDataFromBackend(onDone) {
         if (Array.isArray(d.shopping)) APP_DATA.shopping = d.shopping;
         if (Array.isArray(d.docs))     APP_DATA.docs     = d.docs;
         if (Array.isArray(d.bills))    APP_DATA.bills    = d.bills;
-        if (Array.isArray(d.tabConfig) && d.tabConfig.length) { CONFIG.tabConfig = d.tabConfig; saveConfig(); renderMainTabNav(); }
         saveData();
         // Re-render whatever might currently be visible
         renderDashboard(); renderRecentEntries();
@@ -6031,7 +5615,6 @@ function initApp() {
   updateGreeting();
   updateBackendStatus();
   renderThemeToggle();
-  renderMainTabNav();
   updateEntryCategories();
   setEntryDefaultDate();
   // Populate member selects

@@ -26,6 +26,7 @@ const SHEETS = {
   SHOPPING:  'Shopping',
   DOCS:      'Documents',
   BILLS:     'Bills',
+  TAB_CONFIG:'TabConfig',
   SETTINGS:  'Settings',
   OTP_LOG:   'OTP_Log',
   SYNC_LOG:  'Sync_Log'
@@ -58,10 +59,13 @@ function doPost(e) {
     if (action === 'sendOTP')        return handleSendOTP(body);
     if (action === 'budgetAlert')    return handleBudgetAlert(body);
     if (action === 'uploadFile')     return handleUploadFile(body);
+    if (action === 'renameFile')     return handleRenameFile(body);
+    if (action === 'getFile')        return handleGetFile(body);
     if (action === 'updateSchedule') return handleUpdateSchedule(body);
     if (action === 'updatePassword') return handleUpdatePassword(body);
     if (action === 'resetPassword')  return handleResetPassword(body);
     if (action === 'saveBudgetGoals') return handleSaveBudgetGoals(body);
+    if (action === 'saveAppSettings') return handleSaveAppSettings(body);
     return jsonResp({ status: 'error', msg: 'Unknown POST action: ' + action });
   } catch(err) {
     return jsonResp({ status: 'error', msg: err.message });
@@ -159,6 +163,18 @@ function handleSaveBudgetGoals(body) {
   if (body.goalSavingPct  !== undefined) setSettingValue('goal_saving_pct', body.goalSavingPct);
   if (body.alertThreshold !== undefined) setSettingValue('alert_threshold', body.alertThreshold);
   return jsonResp({ status: 'ok', msg: 'বাজেট লক্ষ্য ব্যাকএন্ডে সংরক্ষিত হয়েছে' });
+}
+
+/**
+ * POST body: { driveFolderId, resetEmail }
+ * Persists these two into the Settings sheet (Sheet is the single source
+ * of truth), so every device that later loads/saves its Web App URL picks
+ * up the same Folder ID / Reset Email automatically — see handleGetSettings().
+ */
+function handleSaveAppSettings(body) {
+  if (body.driveFolderId !== undefined) setSettingValue('drive_folder_id', body.driveFolderId);
+  if (body.resetEmail    !== undefined) setSettingValue('reset_email',     body.resetEmail);
+  return jsonResp({ status: 'ok', msg: 'Settings ব্যাকএন্ডে সংরক্ষিত হয়েছে' });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -390,6 +406,16 @@ function handleSync(body) {
     ]), headers.length);
   }
 
+  // TabConfig — main navigation tab display names + order (Settings ->
+  // ট্যাব ম্যানেজমেন্ট). Uses the same non-destructive "only write if
+  // non-empty" guard as every other data type above.
+  if (Array.isArray(body.tabConfig) && body.tabConfig.length) {
+    const headers = ['TabId','DisplayName','Order'];
+    const sheet = getOrCreateSheet(ss, SHEETS.TAB_CONFIG, headers);
+    ensureHeaders(sheet, headers);
+    writeRows(sheet, body.tabConfig.map(t => [t.id||'', t.label||'', Number(t.order)||0]), headers.length);
+  }
+
   // Log sync
   const logSheet = getOrCreateSheet(ss, SHEETS.SYNC_LOG, ['Timestamp','EntriesCount','Status']);
   logSheet.appendRow([new Date(), (body.entries||[]).length, 'ok']);
@@ -483,7 +509,12 @@ function handlePullData() {
     updatedAt:r.UpdatedAt ? new Date(r.UpdatedAt).toISOString() : ''
   }));
 
-  return jsonResp({ status:'ok', entries, projects, tasks, shopping, docs, bills, pulledAt: new Date().toISOString() });
+  const tabConfigHeaders = ['TabId','DisplayName','Order'];
+  const tabConfig = readSheet(SHEETS.TAB_CONFIG, tabConfigHeaders).map(r => ({
+    id:String(r.TabId), label:String(r.DisplayName), order:Number(r.Order)||0
+  })).sort((a,b)=>a.order-b.order);
+
+  return jsonResp({ status:'ok', entries, projects, tasks, shopping, docs, bills, tabConfig, pulledAt: new Date().toISOString() });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -533,22 +564,81 @@ function buildBudgetAlertHTML(pct, spent, budget) {
 // ══════════════════════════════════════════════════════════
 // FILE UPLOAD TO GOOGLE DRIVE
 // ══════════════════════════════════════════════════════════
+/**
+ * Finds a subfolder by name inside parentFolder, creating it if missing.
+ * Used to organize uploads into category-based subfolders
+ * (e.g. "Entry / এন্ট্রি", "Projects", "Tasks", "Shopping", or any
+ * Documents-tab category) instead of dumping everything into one folder.
+ */
+function getOrCreateCategoryFolder(parentFolder, categoryName) {
+  const safeName = String(categoryName || 'Uncategorized').trim() || 'Uncategorized';
+  const existing = parentFolder.getFoldersByName(safeName);
+  if (existing.hasNext()) return existing.next();
+  return parentFolder.createFolder(safeName);
+}
+
 function handleUploadFile(body) {
-  const { fileName, mimeType, base64, folderId } = body;
+  const { fileName, mimeType, base64, folderId, category } = body;
   if (!fileName || !base64) return jsonResp({ status: 'error', msg: 'Missing file data' });
 
-  const targetFolderId = folderId || CONFIG.DRIVE_FOLDER_ID;
-  if (!targetFolderId) return jsonResp({ status: 'error', msg: 'Drive folder ID not configured' });
+  const rootFolderId = folderId || CONFIG.DRIVE_FOLDER_ID;
+  if (!rootFolderId) return jsonResp({ status: 'error', msg: 'Drive folder ID not configured' });
 
   try {
-    const decoded  = Utilities.base64Decode(base64);
-    const blob     = Utilities.newBlob(decoded, mimeType || 'application/octet-stream', fileName);
-    const folder   = DriveApp.getFolderById(targetFolderId);
-    const file     = folder.createFile(blob);
+    const decoded    = Utilities.base64Decode(base64);
+    const blob       = Utilities.newBlob(decoded, mimeType || 'application/octet-stream', fileName);
+    const rootFolder = DriveApp.getFolderById(rootFolderId);
+    const targetFolder = category ? getOrCreateCategoryFolder(rootFolder, category) : rootFolder;
+    const file        = targetFolder.createFile(blob);
     file.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
-    return jsonResp({ status: 'ok', fileId: file.getId(), fileName: file.getName(), url: file.getUrl() });
+    return jsonResp({
+      status: 'ok', fileId: file.getId(), fileName: file.getName(), url: file.getUrl(),
+      folderId: targetFolder.getId(), folderName: targetFolder.getName()
+    });
   } catch(err) {
     return jsonResp({ status: 'error', msg: 'Drive upload failed: ' + err.message });
+  }
+}
+
+/**
+ * Renames an existing Drive file. Used by the in-app file preview modal's
+ * ✏️ rename action — lets the user fix a scanned/uploaded file's name
+ * after the fact without leaving the app.
+ */
+function handleRenameFile(body) {
+  const { fileId, newName } = body;
+  if (!fileId || !newName) return jsonResp({ status: 'error', msg: 'Missing fileId or newName' });
+  try {
+    const file = DriveApp.getFileById(fileId);
+    file.setName(newName);
+    return jsonResp({ status: 'ok', fileId: file.getId(), fileName: file.getName() });
+  } catch(err) {
+    return jsonResp({ status: 'error', msg: 'Rename failed: ' + err.message });
+  }
+}
+
+/**
+ * Returns a Drive file's raw bytes as base64 + mimeType, so the frontend
+ * can render an in-app preview (image/PDF) and trigger a real browser
+ * print or download — without relying on an external drive.google.com
+ * tab (which can fail to load if the viewer isn't signed into the same
+ * Google account as the Drive folder).
+ */
+function handleGetFile(body) {
+  const { fileId } = body;
+  if (!fileId) return jsonResp({ status: 'error', msg: 'Missing fileId' });
+  try {
+    const file = DriveApp.getFileById(fileId);
+    const blob = file.getBlob();
+    return jsonResp({
+      status: 'ok',
+      fileId: file.getId(),
+      fileName: file.getName(),
+      mimeType: blob.getContentType(),
+      base64: Utilities.base64Encode(blob.getBytes())
+    });
+  } catch(err) {
+    return jsonResp({ status: 'error', msg: 'Could not load file: ' + err.message });
   }
 }
 
@@ -810,6 +900,7 @@ function setup() {
   getOrCreateSheet(ss, SHEETS.SHOPPING,  ['ID','Name','Qty','Price','Category','List','Bought','Note','ExpensedEntryId','DriveFileId','DriveFileName','CreatedAt','UpdatedAt']);
   getOrCreateSheet(ss, SHEETS.DOCS,      ['ID','Title','Category','Type','Tags','Content','DriveFileId','DriveFileName','UpdatedAt']);
   getOrCreateSheet(ss, SHEETS.BILLS,     ['ID','CategoryId','Category','Month','Amount','Member','PaymentMethod','Note','DueDate','Status','PaidDate','PaidAmount','LinkedEntryId','CreatedAt','UpdatedAt']);
+  getOrCreateSheet(ss, SHEETS.TAB_CONFIG,['TabId','DisplayName','Order']);
   getOrCreateSheet(ss, SHEETS.SETTINGS,  ['Key','Value','UpdatedAt']);
   getOrCreateSheet(ss, SHEETS.OTP_LOG,   ['Timestamp','Email','OTP','Type','Used']);
   getOrCreateSheet(ss, SHEETS.SYNC_LOG,  ['Timestamp','EntriesCount','Status']);
