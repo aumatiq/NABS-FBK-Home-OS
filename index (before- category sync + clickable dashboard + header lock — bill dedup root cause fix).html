@@ -475,10 +475,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
 @media(max-width:640px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: 1fr 1fr; } }
 
 .stat-card { background: var(--blk2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 20px; position: relative; overflow: hidden; }
-.clickable-card { cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
-.clickable-card:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.28); border-color:var(--ind); }
-.clickable-card:active { transform:translateY(0); }
-.clickable-card:focus-visible { outline:2px solid var(--ind); outline-offset:2px; }
 .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--ind),var(--ind2)); opacity:0; transition:opacity 0.2s; }
 .stat-card:hover::before { opacity:1; }
 .stat-card.gold-top::before { background:linear-gradient(90deg,var(--gold),var(--gold2)); opacity:1; }
@@ -976,32 +972,26 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
   }
   .header-logo, .header-right, .header-meta, .header-dates, .header-actions { display:contents; }
 
-  .header-logo-icon { grid-area:logo; justify-self:center; width:34px; height:34px; font-size:15px; border-radius:10px; flex-shrink:0; }
+  .header-logo-icon { grid-area:logo; justify-self:center; }
   .sync-btn-wrap     { grid-area:sync; justify-self:center; }
   .logout-btn        { grid-area:lock; justify-self:center; }
 
   /* Name spans columns 2–3 (row 1's column-3 cell is otherwise empty,
      since dates only start at row 2) so the full name always has room —
      never clipped. overflow:visible lets it spill into column 3's empty
-     space if it's ever wider than column 2 alone, instead of truncating.
-     A fluid clamp() font-size is the actual overflow guarantee — it
-     shrinks the text to fit narrow phones (down to ~320px) so it very
-     rarely NEEDS to rely on the overflow:visible spillover at all, and
-     its rendered height then matches the locked 34px logo icon above
-     (font-size × line-height + padding ≈ 34px), so Row 1 never looks
-     "one small, one big" on any device. */
-  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; overflow:visible; max-width:100%; }
+     space if it's ever wider than column 2 alone, instead of truncating. */
+  .header-title { grid-area:name; justify-self:center; align-items:center; text-align:center; overflow:visible; }
   .header-title .name-desktop { display:none; }
   .header-title .name-mobile  { display:inline-block; }
   .header-title .name {
     white-space:nowrap; overflow:visible; text-overflow:clip; max-width:none;
-    font-size:clamp(16px, 5.6vw, 22px); line-height:1.2; font-weight:800; padding:4px 10px;
+    font-size:22px; font-weight:800;
   }
   .header-title .sub { padding-left:0; font-size:9px; }
 
   .header-dates .clock-time {
     grid-area:time; justify-self:center; align-self:center;
-    font-size:clamp(16px, 5.6vw, 22px); padding:2px 8px;
+    font-size:22px; padding:2px 8px;
   }
 
   .date-pills {
@@ -1072,15 +1062,15 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     width: 30px; height: 30px; font-size: 13px; border-radius: 9px;
   }
 
-  .header-title { grid-area: name; justify-self: center; align-items: center; text-align: center; overflow: visible; max-width:100%; }
+  .header-title { grid-area: name; justify-self: center; align-items: center; text-align: center; overflow: visible; }
   .header-title .name-desktop { display: inline-block; }
   .header-title .name-mobile  { display: none; }
-  .header-title .name { white-space: nowrap; overflow: visible; text-overflow: clip; max-width: none; font-size: clamp(11px, 3.4vh, 14px); font-weight: 800; padding: 2px 8px; }
+  .header-title .name { white-space: nowrap; overflow: visible; text-overflow: clip; max-width: none; font-size: 13px; font-weight: 800; padding: 2px 8px; }
   .header-title .sub  { display: none; }
 
   .header-dates .clock-time {
     grid-area: time; justify-self: center; align-self: center;
-    font-size: clamp(11px, 3.4vh, 14px); padding: 1px 7px;
+    font-size: 14px; padding: 1px 7px;
   }
 
   .date-pills {
@@ -1408,22 +1398,22 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     </div>
 
     <div class="grid-4 dashboard-quick-stats">
-      <div class="stat-card gold-top clickable-card" onclick="goToFinanceFiltered('income')" role="button" tabindex="0" title="আয়ের সব এন্ট্রি দেখতে ট্যাপ করুন">
+      <div class="stat-card gold-top">
         <div class="stat-label">💰 এই মাসের আয়</div>
         <div class="stat-value gold" id="dash-income">৳ —</div>
         <div class="stat-sub en">Income this month</div>
       </div>
-      <div class="stat-card red-top clickable-card" onclick="goToFinanceFiltered('expense')" role="button" tabindex="0" title="ব্যয়ের সব এন্ট্রি দেখতে ট্যাপ করুন">
+      <div class="stat-card red-top">
         <div class="stat-label">💸 এই মাসের ব্যয়</div>
         <div class="stat-value red" id="dash-expense">৳ —</div>
         <div class="stat-sub en">Expense this month</div>
       </div>
-      <div class="stat-card ind-top clickable-card" onclick="goToFinanceFiltered('savings')" role="button" tabindex="0" title="সঞ্চয়ের সব এন্ট্রি দেখতে ট্যাপ করুন">
+      <div class="stat-card ind-top">
         <div class="stat-label">🏦 সঞ্চয়</div>
         <div class="stat-value ind" id="dash-savings">৳ —</div>
         <div class="stat-sub en">Savings this month</div>
       </div>
-      <div class="stat-card green-top clickable-card" onclick="goToActiveProjects()" role="button" tabindex="0" title="চলমান প্রজেক্টগুলো দেখতে ট্যাপ করুন">
+      <div class="stat-card green-top">
         <div class="stat-label">🔨 চলমান প্রজেক্ট</div>
         <div class="stat-value green" id="dash-projects">০</div>
         <div class="stat-sub en">Active home projects</div>
@@ -1436,42 +1426,42 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
           <h2 style="font-size:15px;">📊 বাজেট অগ্রগতি</h2>
           <span class="badge badge-ind en" id="dashMonth">—</span>
         </div>
-        <!-- Order fixed per NABS&FBK request: ব্যয় (Expense) → আয় (Income) → সঞ্চয় (Savings).
+        <!-- Order fixed: আয় (Income) → সঞ্চয় (Savings) → ব্যয় (Expense).
              DOM order matches visual order (no CSS `order` hack) for
              accessibility. All three subsections share the exact same
              gauge-item/gauge-canvas-wrap visual language. -->
 
-        <!-- 1) EXPENSE -->
-        <div class="budget-subsection">
-          <h2 class="budget-subsection-title">💸 ব্যয়ের বাজেট</h2>
-          <div id="budgetProgress" class="budget-charts">
-            <div class="gauge-item clickable-card" role="button" tabindex="0" title="ব্যয়ের সব এন্ট্রি দেখতে ট্যাপ করুন" onclick="goToFinanceFiltered('expense')">
-              <div class="gauge-canvas-wrap">
-                <canvas id="gaugeExpense"></canvas>
-                <div class="gauge-center"><span class="pct" id="gaugeExpPct">0%</span><span class="lbl">ব্যয়<br>বাজেট</span></div>
-              </div>
-              <div class="gauge-foot">খরচ <b id="gaugeExpAmt">৳০</b><br><span class="en" style="font-size:10px">/ বাজেট </span><b id="gaugeExpGoal" class="en" style="font-size:11px">৳০</b></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2) INCOME — generated dynamically (JS) since income categories
+        <!-- 1) INCOME — generated dynamically (JS) since income categories
              are user-configurable. See renderIncomeBudgetGauges(). -->
         <div class="budget-subsection">
           <h2 class="budget-subsection-title">💰 আয়ের বাজেট</h2>
           <div id="incomeBudgetProgress" class="budget-charts"></div>
         </div>
 
-        <!-- 3) SAVINGS -->
+        <!-- 2) SAVINGS -->
         <div class="budget-subsection">
           <h2 class="budget-subsection-title">🏦 সঞ্চয়ের বাজেট</h2>
           <div id="savingsBudgetProgress" class="budget-charts">
-            <div class="gauge-item clickable-card" role="button" tabindex="0" title="সঞ্চয়ের সব এন্ট্রি দেখতে ট্যাপ করুন" onclick="goToFinanceFiltered('savings')">
+            <div class="gauge-item">
               <div class="gauge-canvas-wrap">
                 <canvas id="gaugeSavings"></canvas>
                 <div class="gauge-center"><span class="pct" id="gaugeSavPct">0%</span><span class="lbl">সঞ্চয়<br>লক্ষ্য</span></div>
               </div>
               <div class="gauge-foot">জমা <b id="gaugeSavAmt">৳০</b><br><span style="font-size:10px">এই মাসে</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3) EXPENSE -->
+        <div class="budget-subsection">
+          <h2 class="budget-subsection-title">💸 ব্যয়ের বাজেট</h2>
+          <div id="budgetProgress" class="budget-charts">
+            <div class="gauge-item">
+              <div class="gauge-canvas-wrap">
+                <canvas id="gaugeExpense"></canvas>
+                <div class="gauge-center"><span class="pct" id="gaugeExpPct">0%</span><span class="lbl">ব্যয়<br>বাজেট</span></div>
+              </div>
+              <div class="gauge-foot">খরচ <b id="gaugeExpAmt">৳০</b><br><span class="en" style="font-size:10px">/ বাজেট </span><b id="gaugeExpGoal" class="en" style="font-size:11px">৳০</b></div>
             </div>
           </div>
         </div>
@@ -1533,6 +1523,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       <h2>📃 মাসিক Bills</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <span class="badge badge-ind en" id="billsMonthLabel">—</span>
+        <button class="btn btn-ghost btn-sm" onclick="openManageBillCategoriesModal()">🏷️ ক্যাটাগরি ম্যানেজ</button>
       </div>
     </div>
 
@@ -1558,7 +1549,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     </div>
 
     <div id="billsList">
-      <div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>সেটিংস ➜ 🗂️ অন্যান্য ক্যাটাগরি ম্যানেজমেন্ট থেকে Bill ক্যাটাগরি যোগ করো</p></div>
+      <div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>🏷️ ক্যাটাগরি ম্যানেজ থেকে Bill ক্যাটাগরি যোগ করো</p></div>
     </div>
   </div>
   <!-- END BILLS -->
@@ -1686,15 +1677,15 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     </div>
 
     <div class="grid-3" style="margin-bottom:20px">
-      <div class="month-banner" style="background:linear-gradient(135deg,#22c55e,#4ade80)">
+      <div class="month-banner">
         <h3 class="en">INCOME — <span id="fin-month-label">—</span></h3>
-        <div class="amount" id="fin-total-income">৳ ০</div>
+        <div class="amount gold" id="fin-total-income">৳ ০</div>
       </div>
       <div class="month-banner" style="background:linear-gradient(135deg,#ef4444,#f97316)">
         <h3 class="en">EXPENSE</h3>
         <div class="amount" id="fin-total-expense">৳ ০</div>
       </div>
-      <div class="month-banner" style="background:linear-gradient(135deg,#4F46E5,#6366F1)">
+      <div class="month-banner" style="background:linear-gradient(135deg,#22c55e,#4ade80)">
         <h3 class="en">SAVINGS</h3>
         <div class="amount" id="fin-total-savings">৳ ০</div>
       </div>
@@ -1831,6 +1822,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
         <select class="form-select" style="width:auto;padding:8px 12px;font-size:13px" id="projectFilterCat" onchange="renderProjects()">
           <option value="">সব ক্যাটাগরি</option>
         </select>
+        <button class="btn btn-ghost btn-sm" onclick="openManageCategoriesModal('project')">🏷️ ক্যাটাগরি ম্যানেজ</button>
         <button class="btn btn-primary btn-sm" onclick="openProjectModal()">+ নতুন প্রজেক্ট</button>
       </div>
     </div>
@@ -1904,6 +1896,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       <h2>🛒 Shopping List</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select class="form-select" style="width:auto;padding:8px 12px;font-size:13px" id="shopFilterList" onchange="renderShopping()"><option value="">সব List</option></select>
+        <button class="btn btn-ghost btn-sm" onclick="openManageListsModal()">📋 List ম্যানেজ</button>
         <button class="btn btn-primary btn-sm" onclick="openShopModal()">+ Item যোগ</button>
       </div>
     </div>
@@ -1947,6 +1940,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
           <option value="contact">📞 Contact</option>
           <option value="other">📁 Other</option>
         </select>
+        <button class="btn btn-ghost btn-sm" onclick="openManageDocCategoriesModal()">🏷️ ক্যাটাগরি ম্যানেজ</button>
         <button class="btn btn-primary btn-sm" onclick="openDocModal()">+ নতুন Document</button>
       </div>
     </div>
@@ -2185,21 +2179,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
           <p style="font-size:12px;color:var(--sil);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">🏦 সঞ্চয়ের ক্যাটাগরি</p>
           <div id="savingsCatList" class="tag-list" style="margin-bottom:10px"></div>
           <div style="display:flex;gap:6px"><input type="text" class="form-input" id="newSavingsCat" placeholder="নতুন ক্যাটাগরি" style="font-size:13px;padding:7px 10px"><button class="btn btn-ghost btn-xs" onclick="addCategory('savings')">+</button></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Categories (Project / Document / Bill) — centralized here so no other
-         tab shows a category-manage control. -->
-    <div class="settings-section">
-      <h3>🗂️ অন্যান্য ক্যাটাগরি ম্যানেজমেন্ট</h3>
-      <div class="card">
-        <p style="font-size:12px;color:var(--sil2);margin-bottom:12px">Project, Document, Bill ও Shopping List ক্যাটাগরি এখন থেকে শুধু এখান থেকেই যোগ/এডিট/মুছা যাবে। এখানে যা পরিবর্তন করবে তা সাথে সাথে সংশ্লিষ্ট ট্যাবে এবং Google Sheets-এ সিঙ্ক হয়ে যাবে।</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="openManageCategoriesModal('project')">🔨 Project ক্যাটাগরি ম্যানেজ</button>
-          <button class="btn btn-ghost btn-sm" onclick="openManageDocCategoriesModal()">📁 Document ক্যাটাগরি ম্যানেজ</button>
-          <button class="btn btn-ghost btn-sm" onclick="openManageBillCategoriesModal()">📃 Bill ক্যাটাগরি ম্যানেজ</button>
-          <button class="btn btn-ghost btn-sm" onclick="openManageListsModal()">📋 Shopping List ম্যানেজ</button>
         </div>
       </div>
     </div>
@@ -2558,24 +2537,6 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('manageDocCategoriesModal')">✅ হয়ে গেছে</button></div>
-  </div>
-</div>
-
-<!-- TAB ICON PICKER MODAL -->
-<div class="modal-overlay" id="tabIconPickModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header"><h3 id="tabIconPickModalTitle">আইকন পরিবর্তন করো</h3><button class="modal-close" onclick="closeModal('tabIconPickModal')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">ডিফল্ট / প্রস্তাবিত আইকন</label>
-        <div class="emoji-pick-row" id="tabIconPickRow"></div>
-        <input type="text" class="form-input" id="tabIconCustomInput" placeholder="নিজের Icon লিখুন (ঐচ্ছিক)" maxlength="4" style="margin-top:8px">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('tabIconPickModal')">বাতিল</button>
-      <button class="btn btn-primary" onclick="saveTabIconPick()">💾 সংরক্ষণ করুন</button>
-    </div>
   </div>
 </div>
 
@@ -4144,14 +4105,14 @@ function renderRecentEntries() {
   }
   const tintBorder = {expense:'rgba(239,68,68,0.4)', income:'rgba(34,197,94,0.4)', savings:'rgba(79,70,229,0.4)'};
   list.innerHTML = recent.map(e=>`
-    <div class="clickable-card" role="button" tabindex="0" title="এন্ট্রিটি এডিট করতে ট্যাপ করুন" onclick="editEntry('${e.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--blk3);border-radius:8px;margin-bottom:6px;border-left:3px solid ${tintBorder[e.type]||'transparent'}">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--blk3);border-radius:8px;margin-bottom:6px;border-left:3px solid ${tintBorder[e.type]||'transparent'}">
       <span style="font-size:18px">${e.type==='expense'?'💸':e.type==='income'?'💰':'🏦'}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.category}${e.note?' — '+e.note:''}</div>
         <div style="font-size:11px;color:var(--sil2)" class="en">${e.date} · ${e.member} · ${e.payment}</div>
       </div>
       <div style="font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;color:${e.type==='expense'?'var(--red)':e.type==='income'?'var(--green)':'var(--ind2)'};white-space:nowrap">${e.type==='expense'?'-':'+'} ${fmtBDT(e.amount)}</div>
-      <button class="btn-icon danger" onclick="event.stopPropagation();deleteEntry('${e.id}')">🗑</button>
+      <button class="btn-icon danger" onclick="deleteEntry('${e.id}')">🗑</button>
     </div>
   `).join('');
 }
@@ -4245,7 +4206,7 @@ function renderIncomeBudgetGauges(monthEntries, income) {
   const incGoalColor = incGoalPct >= 100 ? cssVar('--green', '#22C55E') : incGoalPct >= 50 ? cssVar('--gold', '#F5A623') : cssVar('--ind2', '#6366F1');
 
   let html = `
-    <div class="gauge-item clickable-card" role="button" tabindex="0" title="আয়ের সব এন্ট্রি দেখতে ট্যাপ করুন" onclick="goToFinanceFiltered('income')">
+    <div class="gauge-item">
       <div class="gauge-canvas-wrap">
         <canvas id="gaugeIncome"></canvas>
         <div class="gauge-center"><span class="pct" id="gaugeIncPct">${incGoalPct}%</span><span class="lbl">আয়<br>লক্ষ্য</span></div>
@@ -4257,9 +4218,8 @@ function renderIncomeBudgetGauges(monthEntries, income) {
   activeCats.forEach((cat, i) => {
     const amt = catMap[cat] || 0;
     const pct = income > 0 ? Math.round(amt / income * 100) : 0;
-    const catEsc = cat.replace(/'/g, "\\'");
     html += `
-      <div class="gauge-item clickable-card" role="button" tabindex="0" title="${cat} — সংশ্লিষ্ট এন্ট্রি দেখতে ট্যাপ করুন" onclick="goToFinanceCategory('income','${catEsc}')">
+      <div class="gauge-item">
         <div class="gauge-canvas-wrap">
           <canvas id="gaugeIncCat_${i}"></canvas>
           <div class="gauge-center"><span class="pct">${pct}%</span><span class="lbl">${cat}</span></div>
@@ -4396,7 +4356,7 @@ function renderDashboard() {
   const tl = document.getElementById('recentTimeline');
   const recent = me;
   tl.innerHTML = recent.length ? recent.map(e=>`
-    <div class="timeline-item clickable-card" role="button" tabindex="0" title="এন্ট্রিটি এডিট করতে ট্যাপ করুন" onclick="editEntry('${e.id}')">
+    <div class="timeline-item">
       <div class="timeline-dot" style="background:${e.type==='expense'?'var(--red)':e.type==='income'?'var(--green)':'var(--ind)'}"></div>
       <div class="timeline-content">
         <div class="timeline-text">${e.category}${e.note?' — <span style="color:var(--sil)">'+e.note+'</span>':''} <strong style="color:${e.type==='expense'?'var(--red)':'var(--green)'}">${fmtBDT(e.amount)}</strong></div>
@@ -4667,43 +4627,6 @@ function confirmBreakSavings() {
       toast('⚠️ সিঙ্ক অসম্পূর্ণ — এন্ট্রি দুটো এই ডিভাইসে নিরাপদে আছে, ইন্টারনেট ঠিক হলে পরবর্তী Sync (🔄 বাটন বা পরবর্তী unlock) এ আবার চেষ্টা হবে। Sheets-এ এখনো আংশিক/অসামঞ্জস্যপূর্ণ কিছু লেখা হয়নি।', 'error');
     }
   });
-}
-
-/** Dashboard "clickable items" — jump to Finance tab AND apply the
- *  matching type filter (expense/income/savings) so the person lands on
- *  exactly the filtered, relevant list — not just the tab. */
-function goToFinanceFiltered(type) {
-  switchTab('finance');
-  setTimeout(() => {
-    const sel = document.getElementById('financeFilterType');
-    if (sel) { sel.value = type || ''; filterFinance(); }
-    const table = document.getElementById('financeTableBody');
-    if (table) table.closest('.card')?.scrollIntoView({ behavior:'smooth', block:'start' });
-  }, 150);
-}
-
-/** Dashboard "চলমান প্রজেক্ট" card → Projects tab pre-filtered to Active. */
-function goToActiveProjects() {
-  switchTab('projects');
-  setTimeout(() => {
-    const sel = document.getElementById('projectFilterStatus');
-    if (sel) { sel.value = 'active'; renderProjects(); }
-  }, 150);
-}
-
-/** Same as goToFinanceFiltered but also pre-fills the search box with a
- *  category name, for gauges that represent one specific category
- *  (e.g. an individual income-category gauge) rather than a whole type. */
-function goToFinanceCategory(type, cat) {
-  switchTab('finance');
-  setTimeout(() => {
-    const sel = document.getElementById('financeFilterType');
-    const search = document.getElementById('financeSearch');
-    if (sel) sel.value = type || '';
-    if (search) search.value = cat || '';
-    filterFinance();
-    document.getElementById('financeTableBody')?.closest('.card')?.scrollIntoView({ behavior:'smooth', block:'start' });
-  }, 150);
 }
 
 function filterFinance() {
@@ -5012,7 +4935,6 @@ function renderGenericCatManage() {
   wireChipDragDrop(el, (from,to) => {
     reorderArray(CONFIG.projectCategories, from, to);
     saveConfig(); renderGenericCatManage(); populateProjectCategorySelects();
-    pushDataToBackend();
   });
 }
 
@@ -5036,13 +4958,11 @@ function addGenericCategory() {
   CONFIG.projectCategories.push(val);
   document.getElementById('newGenericCat').value='';
   saveConfig(); renderGenericCatManage(); populateProjectCategorySelects(); toast('ক্যাটাগরি যোগ হয়েছে!');
-  pushDataToBackend();
 }
 
 function removeGenericCategory(i) {
   CONFIG.projectCategories.splice(i,1);
   saveConfig(); renderGenericCatManage(); populateProjectCategorySelects();
-  pushDataToBackend();
 }
 
 // ──────────────────────────────────────────
@@ -5212,7 +5132,6 @@ function renderShoppingListManage() {
   wireChipDragDrop(el, (from,to) => {
     reorderArray(CONFIG.shoppingLists, from, to);
     saveConfig(); renderShoppingListManage(); renderShopping();
-    pushDataToBackend();
   });
 }
 
@@ -5233,13 +5152,11 @@ function addShoppingList() {
   const val=document.getElementById('newListInput').value.trim(); if(!val) return;
   CONFIG.shoppingLists.push(val); document.getElementById('newListInput').value='';
   saveConfig(); renderShoppingListManage(); renderShopping(); toast('নতুন list তৈরি হয়েছে!');
-  pushDataToBackend();
 }
 
 function removeShoppingList(i) {
   secureConfirm(`"${CONFIG.shoppingLists[i]}" list মুছবেন?`,()=>{
     CONFIG.shoppingLists.splice(i,1); saveConfig(); renderShoppingListManage(); renderShopping();
-    pushDataToBackend();
   });
 }
 
@@ -5492,7 +5409,6 @@ function renderDocCatManage() {
   wireChipDragDrop(el, (from,to) => {
     reorderArray(CONFIG.docCategories, from, to);
     saveConfig(); renderDocCatManage(); renderDocs();
-    pushDataToBackend();
   });
 }
 
@@ -5514,13 +5430,11 @@ function addDocCategory() {
   const val=document.getElementById('newDocCatInput').value.trim(); if(!val) return;
   CONFIG.docCategories.push(val); document.getElementById('newDocCatInput').value='';
   saveConfig(); renderDocCatManage(); renderDocs(); toast('ক্যাটাগরি যোগ হয়েছে!');
-  pushDataToBackend();
 }
 
 function removeDocCategory(i) {
   secureConfirm(`"${CONFIG.docCategories[i]}" ক্যাটাগরি মুছবেন?`,()=>{
     CONFIG.docCategories.splice(i,1); saveConfig(); renderDocCatManage(); renderDocs();
-    pushDataToBackend();
   });
 }
 
@@ -5549,14 +5463,7 @@ function generateMonthlyBills() {
   let changed = false;
   (CONFIG.billCategories||[]).forEach(cat => {
     const instId = `bill_${cat.id}_${ym}`;
-    // Match by exact instance id OR by (category name + month) — the name
-    // match is a safety net in case this device's billCategories haven't
-    // finished syncing yet and its category id doesn't match what's
-    // already on the Sheet for this category this month. Without this,
-    // a stale/racing id could spawn a second Pending row for the same
-    // category in the same month.
-    const already = APP_DATA.bills.some(b => b.id === instId || (b.month === ym && b.category === cat.name));
-    if (already) return;
+    if (APP_DATA.bills.some(b => b.id === instId)) return;
     let dueDate = '';
     if (cat.defaultDueDay) {
       const day = Math.min(31, Math.max(1, parseInt(cat.defaultDueDay,10)||1));
@@ -5611,7 +5518,7 @@ function renderBills() {
 
   const div = document.getElementById('billsList');
   if (!monthBills.length) {
-    div.innerHTML = '<div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>সেটিংস ➜ 🗂️ অন্যান্য ক্যাটাগরি ম্যানেজমেন্ট থেকে Bill ক্যাটাগরি যোগ করো</p></div>';
+    div.innerHTML = '<div class="empty-state"><div class="empty-icon">📃</div><h3>এই মাসে কোনো bill নেই</h3><p>🏷️ ক্যাটাগরি ম্যানেজ থেকে Bill ক্যাটাগরি যোগ করো</p></div>';
     return;
   }
   div.innerHTML = monthBills.map(b => {
@@ -5901,7 +5808,7 @@ function renderTabManageList() {
   el.innerHTML = `<div class="manage-chip-list">` + list.map((t,i)=>`
     <div class="manage-chip sortable-chip" draggable="true" data-idx="${i}" style="padding:8px 8px 8px 12px">
       <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
-      <button type="button" class="tab-icon-edit-btn" title="আইকন পরিবর্তন করো" onclick="openTabIconPicker('${t.id}')" style="font-size:16px;background:none;border:1px solid var(--bd);border-radius:7px;width:30px;height:30px;cursor:pointer;line-height:1;flex-shrink:0">${t.icon||'📌'}</button>
+      <span style="font-size:16px">${t.icon||'📌'}</span>
       <input type="text" class="file-name-edit" style="flex:1" value="${(t.label||'').replace(/"/g,'&quot;')}"
              oninput="updateTabLabel('${t.id}', this.value)" placeholder="ট্যাবের নাম">
     </div>`).join('') + `</div>`;
@@ -5921,68 +5828,11 @@ function updateTabLabel(tabId, newLabel) {
   renderMainTabNav();
 }
 
-// ── SETTINGS: Tab Management → icon editing ──
-// Shows each tab's current/default icon plus a curated set of alternatives,
-// and lets the user type any custom emoji. Selection saves + syncs instantly.
-const TAB_ICON_CHOICES = ['🏠','📃','➕','💰','📅','🔨','✅','🛒','📄','⚙️',
-  '📊','🏦','🧾','🗂️','📌','⭐','🔔','📁','🧩','🎯'];
-let _tabIconPickTargetId = null;
-let _pickedTabIcon = '';
-
-function openTabIconPicker(tabId) {
-  const t = (CONFIG.tabConfig||[]).find(x=>x.id===tabId);
-  if (!t) return;
-  _tabIconPickTargetId = tabId;
-  _pickedTabIcon = t.icon || '📌';
-  document.getElementById('tabIconPickModalTitle').textContent = `${t.icon||'📌'} "${t.label||tabId}" — আইকন পরিবর্তন করো`;
-  document.getElementById('tabIconCustomInput').value = _pickedTabIcon;
-  renderTabIconPickRow();
-  openModal('tabIconPickModal');
-}
-
-function renderTabIconPickRow() {
-  const row = document.getElementById('tabIconPickRow');
-  if (!row) return;
-  // Always show the tab's own default icon first (if not already in the list),
-  // so the "default icon that was given" is visible, per requirement.
-  const defaultIcon = (DEFAULT_TAB_CONFIG().find(d=>d.id===_tabIconPickTargetId)||{}).icon;
-  const choices = defaultIcon && !TAB_ICON_CHOICES.includes(defaultIcon)
-    ? [defaultIcon, ...TAB_ICON_CHOICES] : TAB_ICON_CHOICES;
-  row.innerHTML = choices.map(e=>`<button type="button" class="emoji-pick-btn ${_pickedTabIcon===e?'active':''}" onclick="pickTabIcon('${e}')">${e}</button>`).join('');
-}
-
-function pickTabIcon(icon) {
-  _pickedTabIcon = icon;
-  document.getElementById('tabIconCustomInput').value = icon;
-  renderTabIconPickRow();
-}
-
-function saveTabIconPick() {
-  const custom = document.getElementById('tabIconCustomInput').value.trim();
-  const icon = custom || _pickedTabIcon || '📌';
-  const t = (CONFIG.tabConfig||[]).find(x=>x.id===_tabIconPickTargetId);
-  if (!t) { closeModal('tabIconPickModal'); return; }
-  t.icon = icon;
-  saveConfig();
-  renderTabManageList();
-  renderMainTabNav();
-  pushDataToBackend();
-  closeModal('tabIconPickModal');
-  toast('ট্যাবের আইকন আপডেট হয়েছে!');
-}
-
 /** Debounced push to Sheets while typing — fires ~700ms after the user
  *  stops editing a tab's name, so we don't spam a network request per
  *  keystroke but the rename still reaches the Sheet without an explicit
  *  save button. */
 let _tabLabelSyncTimer = null;
-// Keyboard support for clickable dashboard items (cards, gauges, recent-entry rows)
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  const t = e.target.closest && e.target.closest('[role="button"]');
-  if (t) { e.preventDefault(); t.click(); }
-});
-
 document.addEventListener('input', (e) => {
   if (e.target && e.target.closest && e.target.closest('#tabManageList')) {
     clearTimeout(_tabLabelSyncTimer);
@@ -6176,13 +6026,6 @@ function loadSettingsFromBackend(onDone) {
       // auto-fills" work on a brand-new device).
       if (s.drive_folder_id !== undefined && s.drive_folder_id !== '' && s.drive_folder_id !== CONFIG.driveFolderId) { CONFIG.driveFolderId = String(s.drive_folder_id); changed = true; }
       if (s.reset_email     !== undefined && s.reset_email     !== '' && s.reset_email     !== CONFIG.resetEmail)   { CONFIG.resetEmail   = String(s.reset_email);     changed = true; }
-      // Categories (Finance/Project/Document/Bill) — Sheet is canonical, same
-      // as above. Applied FIRST (before any bill-instance generation runs
-      // elsewhere in the init chain) so a fresh device never regenerates its
-      // own local Bill category ids and creates duplicate month instances.
-      if (s.categories_config_json !== undefined && s.categories_config_json !== '') {
-        applyCategoriesConfigFromBackend(String(s.categories_config_json));
-      }
       if (changed) {
         saveConfig();
         // If Settings tab is currently open, refresh the visible fields
@@ -6377,7 +6220,6 @@ function renderCatList(type,elId) {
   wireChipDragDrop(el, (from,to) => {
     reorderArray(CONFIG.categories[type], from, to);
     saveConfig(); renderCatList(type,elId); updateEntryCategories();
-    pushDataToBackend();
   });
 }
 function addCategory(type) {
@@ -6386,11 +6228,9 @@ function addCategory(type) {
   if(!CONFIG.categories[type].includes(val)) CONFIG.categories[type].push(val);
   document.getElementById(id).value=''; saveConfig();
   renderCatList(type,type+'CatList'); updateEntryCategories(); toast('ক্যাটাগরি যোগ হয়েছে!');
-  pushDataToBackend();
 }
 function removeCategory(type,i) {
   CONFIG.categories[type].splice(i,1); saveConfig(); renderCatList(type,type+'CatList'); updateEntryCategories();
-  pushDataToBackend();
 }
 function renameCategory(type,i) {
   const oldName = CONFIG.categories[type][i];
@@ -6435,55 +6275,9 @@ function pushDataToBackend() {
     body:JSON.stringify({
       entries:APP_DATA.entries, projects:APP_DATA.projects, tasks:APP_DATA.tasks,
       shopping:APP_DATA.shopping, docs:APP_DATA.docs, bills:APP_DATA.bills,
-      tabConfig:CONFIG.tabConfig,
-      categoriesConfigJson: buildCategoriesConfigJson()
+      tabConfig:CONFIG.tabConfig
     })
   }).catch(()=>{});
-}
-
-/** All category lists in one JSON blob (Finance expense/income/savings,
- *  Project, Document, Shopping-list names, and Bill categories incl. icons
- *  + defaults). Pushed to the Settings sheet on every category change so a
- *  fresh device pulls the SAME categories instead of regenerating its own
- *  local defaults with new random ids — which was the root cause of Bill
- *  categories/instances silently duplicating on a new-device login. */
-function buildCategoriesConfigJson() {
-  return JSON.stringify({
-    categories:        CONFIG.categories,
-    projectCategories:  CONFIG.projectCategories,
-    docCategories:       CONFIG.docCategories,
-    shoppingLists:       CONFIG.shoppingLists,
-    billCategories:      CONFIG.billCategories
-  });
-}
-
-/** Applies a categories-config JSON blob pulled from the backend Settings
- *  sheet onto CONFIG (Sheet is the single source of truth, same philosophy
- *  as driveFolderId/resetEmail), then refreshes every UI surface that
- *  depends on categories. Returns true if anything actually changed. */
-function applyCategoriesConfigFromBackend(json) {
-  if (!json) return false;
-  let parsed;
-  try { parsed = JSON.parse(json); } catch(e) { return false; }
-  if (!parsed || typeof parsed !== 'object') return false;
-  let changed = false;
-  if (parsed.categories && typeof parsed.categories === 'object') { CONFIG.categories = parsed.categories; changed = true; }
-  if (Array.isArray(parsed.projectCategories)) { CONFIG.projectCategories = parsed.projectCategories; changed = true; }
-  if (Array.isArray(parsed.docCategories))     { CONFIG.docCategories     = parsed.docCategories;     changed = true; }
-  if (Array.isArray(parsed.shoppingLists))     { CONFIG.shoppingLists     = parsed.shoppingLists;     changed = true; }
-  if (Array.isArray(parsed.billCategories) && parsed.billCategories.length) { CONFIG.billCategories = parsed.billCategories; changed = true; }
-  if (!changed) return false;
-  ensureBillCategoryFinanceCategories();
-  saveConfig();
-  // Refresh anything currently rendered that reads from these lists
-  if (typeof renderCatList === 'function') { renderCatList('expense','expenseCatList'); renderCatList('income','incomeCatList'); renderCatList('savings','savingsCatList'); }
-  if (typeof updateEntryCategories === 'function') updateEntryCategories();
-  if (typeof populateProjectCategorySelects === 'function') populateProjectCategorySelects();
-  if (typeof populateDocCategorySelects === 'function') populateDocCategorySelects();
-  if (typeof renderGenericCatManage === 'function') renderGenericCatManage();
-  if (typeof renderDocCatManage === 'function') renderDocCatManage();
-  if (typeof renderBillCatManage === 'function') renderBillCatManage();
-  return true;
 }
 
 function syncNow() {
@@ -6683,26 +6477,18 @@ function initApp() {
       localStorage.setItem('nabsfbk_last_tab', 'dashboard');
     }
   } catch(e) {}
-  // Pull latest password hashes + budget goals + CATEGORIES from backend
-  // (cross-device sync). Chained (not fired in parallel) so the canonical
-  // Bill/Finance/Project/Document categories are adopted BEFORE
-  // performSafeSync() re-generates this month's Bill instances — otherwise
-  // a fresh device briefly uses its own freshly-regenerated local category
-  // ids and creates duplicate Bill category rows for the current month.
-  loadSettingsFromBackend(() => {
-    if (typeof generateMonthlyBills === 'function') generateMonthlyBills();
-    if (typeof renderBills === 'function' && document.getElementById('tab-bills')?.classList.contains('active')) renderBills();
-    // ── SAFE CROSS-DEVICE SYNC ──
-    // Always PULL the Sheet's canonical data FIRST (understood by each
-    // entry's own timestamp/id — never a blind local overwrite). Only AFTER
-    // adopting that canonical data do we push up whatever this device has
-    // locally that the Sheet doesn't have yet (e.g. entries added on this
-    // device while offline). This is what actually fixes cross-device sync:
-    // the OLD flow pushed this device's full local copy first and could
-    // wipe out newer entries another device had already saved, before this
-    // device ever got a chance to pull them down. See performSafeSync().
-    performSafeSync();
-  });
+  // Pull latest password hashes + budget goals from backend (cross-device sync)
+  loadSettingsFromBackend();
+  // ── SAFE CROSS-DEVICE SYNC ──
+  // Always PULL the Sheet's canonical data FIRST (understood by each
+  // entry's own timestamp/id — never a blind local overwrite). Only AFTER
+  // adopting that canonical data do we push up whatever this device has
+  // locally that the Sheet doesn't have yet (e.g. entries added on this
+  // device while offline). This is what actually fixes cross-device sync:
+  // the OLD flow pushed this device's full local copy first and could
+  // wipe out newer entries another device had already saved, before this
+  // device ever got a chance to pull them down. See performSafeSync().
+  performSafeSync();
   // Start the auto-logout countdown for this login
   armSessionTimeout();
 }

@@ -416,6 +416,18 @@ function handleSync(body) {
     writeRows(sheet, body.tabConfig.map(t => [t.id||'', t.label||'', Number(t.order)||0]), headers.length);
   }
 
+  // Categories config (Finance expense/income/savings, Project, Document,
+  // Shopping-list names, Bill categories incl. icons + defaults) — stored
+  // as one JSON blob in the Settings sheet (same generic Key/Value store
+  // used for driveFolderId/resetEmail), so it's returned automatically by
+  // handleGetSettings() on every device's next load. This is what makes a
+  // freshly-logged-in device adopt the SAME Bill categories instead of
+  // silently regenerating its own local defaults with new random ids
+  // (previously the root cause of Bill categories/instances duplicating).
+  if (body.categoriesConfigJson) {
+    setSettingValue('categories_config_json', body.categoriesConfigJson);
+  }
+
   // Log sync
   const logSheet = getOrCreateSheet(ss, SHEETS.SYNC_LOG, ['Timestamp','EntriesCount','Status']);
   logSheet.appendRow([new Date(), (body.entries||[]).length, 'ok']);
