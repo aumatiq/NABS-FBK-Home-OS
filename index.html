@@ -1878,6 +1878,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
           <option value="pending">Pending</option>
           <option value="done">Done</option>
         </select>
+        <select class="form-select" style="width:auto;padding:8px 12px;font-size:13px" id="taskFilterCat" onchange="filterTasks()"><option value="">সব ক্যাটাগরি</option></select>
         <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Task যোগ</button>
       </div>
     </div>
@@ -2189,17 +2190,18 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       </div>
     </div>
 
-    <!-- Categories (Project / Document / Bill) — centralized here so no other
-         tab shows a category-manage control. -->
+    <!-- Categories (Project / Document / Bill / Task) — centralized here so no
+         other tab shows a category-manage control. -->
     <div class="settings-section">
       <h3>🗂️ অন্যান্য ক্যাটাগরি ম্যানেজমেন্ট</h3>
       <div class="card">
-        <p style="font-size:12px;color:var(--sil2);margin-bottom:12px">Project, Document, Bill ও Shopping List ক্যাটাগরি এখন থেকে শুধু এখান থেকেই যোগ/এডিট/মুছা যাবে। এখানে যা পরিবর্তন করবে তা সাথে সাথে সংশ্লিষ্ট ট্যাবে এবং Google Sheets-এ সিঙ্ক হয়ে যাবে।</p>
+        <p style="font-size:12px;color:var(--sil2);margin-bottom:12px">Project, Document, Bill, Task ও Shopping List ক্যাটাগরি এখন থেকে শুধু এখান থেকেই যোগ/এডিট/মুছা যাবে। এখানে যা পরিবর্তন করবে তা সাথে সাথে সংশ্লিষ্ট ট্যাবে এবং Google Sheets-এ সিঙ্ক হয়ে যাবে।</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="openManageCategoriesModal('project')">🔨 Project ক্যাটাগরি ম্যানেজ</button>
           <button class="btn btn-ghost btn-sm" onclick="openManageDocCategoriesModal()">📁 Document ক্যাটাগরি ম্যানেজ</button>
           <button class="btn btn-ghost btn-sm" onclick="openManageBillCategoriesModal()">📃 Bill ক্যাটাগরি ম্যানেজ</button>
           <button class="btn btn-ghost btn-sm" onclick="openManageListsModal()">📋 Shopping List ম্যানেজ</button>
+          <button class="btn btn-ghost btn-sm" onclick="openManageTaskCategoriesModal()">✅ Task ক্যাটাগরি ম্যানেজ</button>
         </div>
       </div>
     </div>
@@ -2392,11 +2394,7 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
       <div class="form-row">
         <div class="form-group"><label class="form-label">সদস্য</label><select class="form-select" id="tmMember"></select></div>
         <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-select" id="tmCategory">
-            <option value="Home">🏠 Home</option><option value="Finance">💰 Finance</option>
-            <option value="Shopping">🛒 Shopping</option><option value="Project">🔨 Project</option>
-            <option value="Personal">👤 Personal</option><option value="Other">📌 Other</option>
-          </select>
+          <select class="form-select" id="tmCategory"></select>
         </div>
       </div>
       <div class="form-group"><label class="form-label">নোট</label><textarea class="form-textarea" id="tmNotes" placeholder="বিস্তারিত…" rows="3"></textarea></div>
@@ -2560,6 +2558,22 @@ h1, h2, h3, h4 { font-family: var(--font-h); font-weight: 700; }
     <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('manageDocCategoriesModal')">✅ হয়ে গেছে</button></div>
   </div>
 </div>
+
+<!-- MANAGE TASK CATEGORIES MODAL -->
+<div class="modal-overlay" id="manageTaskCategoriesModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header"><h3>✅ Task ক্যাটাগরি ম্যানেজ</h3><button class="modal-close" onclick="closeModal('manageTaskCategoriesModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="manage-chip-list" id="taskCatManage"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="text" class="form-input" id="newTaskCatInput" placeholder="নতুন ক্যাটাগরি (যেমন: Health, Travel)">
+        <button class="btn btn-ghost btn-sm" onclick="addTaskCategory()">+ যোগ</button>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="closeModal('manageTaskCategoriesModal')">✅ হয়ে গেছে</button></div>
+  </div>
+</div>
+
 
 <!-- TAB ICON PICKER MODAL -->
 <div class="modal-overlay" id="tabIconPickModal">
@@ -2860,6 +2874,7 @@ let CONFIG = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {
   projectCategories:  ['Electrical','Plumbing','Painting','Furniture','Garden','Tech','Maintenance'],
   docCategories:      ['সাধারণ নোট','Warranty','Bills','Appliances','Insurance','Documents','Others'],
   shoppingLists:      ['নিয়মিত বাজার','জরুরি কেনাকাটা','মাসিক বাজার'],
+  taskCategories:     ['Home','Finance','Shopping','Project','Personal','Other'],
   billCategories:     DEFAULT_BILL_CATEGORIES(),
   tabConfig:          DEFAULT_TAB_CONFIG(),
   customTabs:         []
@@ -2911,6 +2926,19 @@ ensureBillCategoryFinanceCategories();
 if (!Array.isArray(APP_DATA.bills)) {
   APP_DATA.bills = [];
 }
+// Migration guard: existing users who saved CONFIG before task categories
+// existed as a manageable list won't have CONFIG.taskCategories at all.
+if (!Array.isArray(CONFIG.taskCategories) || !CONFIG.taskCategories.length) {
+  CONFIG.taskCategories = ['Home','Finance','Shopping','Project','Personal','Other'];
+}
+// Task category icon lookup (mirrors the Project/Document category icon
+// pattern). Any custom category the user adds later that isn't in this
+// map simply falls back to the generic 📌 icon — same behavior as
+// Project/Document categories.
+const TASK_CAT_ICONS = {
+  'Home':'🏠','Finance':'💰','Shopping':'🛒','Project':'🔨','Personal':'👤','Other':'📌'
+};
+function taskCatIcon(name) { return TASK_CAT_ICONS[name] || '📌'; }
 
 // Normalize CONFIG.tabConfig: seed it for existing users who saved CONFIG
 // before this feature existed, and — if a future update ever adds a new
@@ -4713,7 +4741,7 @@ function filterFinance() {
   let entries  = APP_DATA.entries;
   if (type)   entries = entries.filter(e=>e.type===type);
   if (member) entries = entries.filter(e=>e.member===member);
-  if (search) entries = entries.filter(e=>(e.category+e.note+e.member).toLowerCase().includes(search));
+  if (search) entries = entries.filter(e=>(e.category+e.note+e.member+' '+e.date+' '+e.amount).toLowerCase().includes(search));
   document.getElementById('entryCount').textContent = entries.length;
   const typeL = {expense:'💸 ব্যয়',income:'💰 আয়',savings:'🏦 সঞ্চয়'};
   const tbody = document.getElementById('financeTableBody');
@@ -5040,9 +5068,26 @@ function addGenericCategory() {
 }
 
 function removeGenericCategory(i) {
-  CONFIG.projectCategories.splice(i,1);
-  saveConfig(); renderGenericCatManage(); populateProjectCategorySelects();
-  pushDataToBackend();
+  const oldName = CONFIG.projectCategories[i];
+  const fallback = 'Other';
+  if (oldName === fallback) { toast('"Other" ডিফল্ট ফলব্যাক ক্যাটাগরি — এটি মুছা যাবে না','warning'); return; }
+  const usedCount = APP_DATA.projects.filter(p => p.category===oldName).length;
+  const doRemove = () => {
+    if (!CONFIG.projectCategories.includes(fallback)) CONFIG.projectCategories.push(fallback);
+    if (usedCount) APP_DATA.projects.forEach(p => { if (p.category===oldName) p.category = fallback; });
+    const idx = CONFIG.projectCategories.indexOf(oldName);
+    if (idx > -1) CONFIG.projectCategories.splice(idx,1);
+    saveConfig(); saveData();
+    renderGenericCatManage(); populateProjectCategorySelects();
+    if (typeof renderProjects === 'function') renderProjects();
+    pushDataToBackend();
+    toast(usedCount ? `ক্যাটাগরি মুছে গেছে — ${usedCount}টি প্রজেক্ট "Other"-এ সরানো হয়েছে` : 'ক্যাটাগরি মুছে গেছে','warning');
+  };
+  if (usedCount) {
+    secureConfirm(`"${oldName}" মুছবেন? এই ক্যাটাগরির ${usedCount}টি প্রজেক্ট স্বয়ংক্রিয়ভাবে "Other"-এ সরানো হবে।`, doRemove);
+  } else {
+    doRemove();
+  }
 }
 
 // ──────────────────────────────────────────
@@ -5053,6 +5098,7 @@ function openTaskModal(id) {
   document.getElementById('taskModalTitle').textContent=id?'✏️ Task সম্পাদনা':'✅ নতুন Task';
   const memberSel=document.getElementById('tmMember');
   memberSel.innerHTML=CONFIG.members.map(m=>`<option value="${m}">${m}</option>`).join('');
+  populateTaskCategorySelect();
   clearMiniFile('task');
   if(id){
     const t=APP_DATA.tasks.find(x=>x.id===id); if(!t) return;
@@ -5101,26 +5147,28 @@ function deleteTask(id) {
 function filterTasks() {
   const search=(document.getElementById('taskSearch').value||'').toLowerCase();
   const status=document.getElementById('taskFilterStatus').value;
+  const catFilterEl=document.getElementById('taskFilterCat');
+  const catFilter=catFilterEl?catFilterEl.value:'';
   let tasks=APP_DATA.tasks;
   if(status==='pending') tasks=tasks.filter(t=>!t.done);
   if(status==='done')    tasks=tasks.filter(t=>t.done);
+  if(catFilter) tasks=tasks.filter(t=>t.category===catFilter);
   if(search) tasks=tasks.filter(t=>(t.text+t.notes+t.member).toLowerCase().includes(search));
   document.getElementById('task-total').textContent=APP_DATA.tasks.length;
   document.getElementById('task-pending').textContent=APP_DATA.tasks.filter(t=>!t.done).length;
   document.getElementById('task-done').textContent=APP_DATA.tasks.filter(t=>t.done).length;
-  const catI={Home:'🏠',Finance:'💰',Shopping:'🛒',Project:'🔨',Personal:'👤',Other:'📌'};
   document.getElementById('taskList').innerHTML=tasks.length?tasks.map(t=>`
     <div class="task-item ${t.done?'done':''}">
       <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
       <div class="priority-dot priority-${t.priority}"></div>
       <span class="task-text">${t.text}</span>
-      <div class="task-meta"><span class="en">${t.due||''}</span><span class="badge badge-sil">${t.member}</span><span>${catI[t.category]||'📌'}</span>${t.driveFileId?`<button class="btn-icon" style="width:auto;height:auto" onclick="openFilePreviewModal('${t.driveFileId}','${jsStr(t.driveFileName||t.text)}')" title="সংযুক্ত ডকুমেন্ট">📎</button>`:''}</div>
+      <div class="task-meta"><span class="en">${t.due||''}</span><span class="badge badge-sil">${t.member}</span><span>${taskCatIcon(t.category)}</span>${t.driveFileId?`<button class="btn-icon" style="width:auto;height:auto" onclick="openFilePreviewModal('${t.driveFileId}','${jsStr(t.driveFileName||t.text)}')" title="সংযুক্ত ডকুমেন্ট">📎</button>`:''}</div>
       <div style="display:flex;gap:4px"><button class="btn-icon" onclick="openTaskModal('${t.id}')">✏️</button><button class="btn-icon danger" onclick="deleteTask('${t.id}')">🗑</button></div>
     </div>`).join(''):
     '<div class="empty-state"><div class="empty-icon">✅</div><h3>কোনো task নেই</h3><p>নতুন task যোগ করো</p></div>';
 }
 
-function renderTasks() { filterTasks(); }
+function renderTasks() { populateTaskCategoryFilter(); filterTasks(); }
 
 // ──────────────────────────────────────────
 // SHOPPING
@@ -5237,9 +5285,24 @@ function addShoppingList() {
 }
 
 function removeShoppingList(i) {
-  secureConfirm(`"${CONFIG.shoppingLists[i]}" list মুছবেন?`,()=>{
-    CONFIG.shoppingLists.splice(i,1); saveConfig(); renderShoppingListManage(); renderShopping();
+  const oldName = CONFIG.shoppingLists[i];
+  const fallback = 'অন্যান্য';
+  if (oldName === fallback) { toast('"অন্যান্য" ডিফল্ট ফলব্যাক লিস্ট — এটি মুছা যাবে না','warning'); return; }
+  const usedCount = APP_DATA.shopping.filter(s => s.list===oldName).length;
+  const msg = usedCount
+    ? `"${oldName}" list মুছবেন? এই লিস্টের ${usedCount}টি আইটেম স্বয়ংক্রিয়ভাবে "অন্যান্য"-তে সরানো হবে।`
+    : `"${oldName}" list মুছবেন?`;
+  secureConfirm(msg,()=>{
+    if (usedCount) {
+      if (!CONFIG.shoppingLists.includes(fallback)) CONFIG.shoppingLists.push(fallback);
+      APP_DATA.shopping.forEach(s => { if (s.list===oldName) s.list = fallback; });
+      saveData();
+    }
+    const idx = CONFIG.shoppingLists.indexOf(oldName);
+    if (idx > -1) CONFIG.shoppingLists.splice(idx,1);
+    saveConfig(); renderShoppingListManage(); renderShopping();
     pushDataToBackend();
+    toast(usedCount ? `List মুছে গেছে — ${usedCount}টি আইটেম "অন্যান্য"-তে সরানো হয়েছে` : 'List মুছে গেছে','warning');
   });
 }
 
@@ -5518,9 +5581,117 @@ function addDocCategory() {
 }
 
 function removeDocCategory(i) {
-  secureConfirm(`"${CONFIG.docCategories[i]}" ক্যাটাগরি মুছবেন?`,()=>{
-    CONFIG.docCategories.splice(i,1); saveConfig(); renderDocCatManage(); renderDocs();
+  const oldName = CONFIG.docCategories[i];
+  const fallback = 'Others';
+  if (oldName === fallback) { toast('"Others" ডিফল্ট ফলব্যাক ক্যাটাগরি — এটি মুছা যাবে না','warning'); return; }
+  const usedCount = APP_DATA.docs.filter(d => d.category===oldName).length;
+  const msg = usedCount
+    ? `"${oldName}" ক্যাটাগরি মুছবেন? এই ক্যাটাগরির ${usedCount}টি ডকুমেন্ট স্বয়ংক্রিয়ভাবে "Others"-এ সরানো হবে।`
+    : `"${oldName}" ক্যাটাগরি মুছবেন?`;
+  secureConfirm(msg,()=>{
+    if (usedCount) {
+      if (!CONFIG.docCategories.includes(fallback)) CONFIG.docCategories.push(fallback);
+      APP_DATA.docs.forEach(d => { if (d.category===oldName) d.category = fallback; });
+      if (currentDocCatFilter === oldName) currentDocCatFilter = fallback;
+      saveData();
+    }
+    const idx = CONFIG.docCategories.indexOf(oldName);
+    if (idx > -1) CONFIG.docCategories.splice(idx,1);
+    saveConfig(); renderDocCatManage(); renderDocs();
     pushDataToBackend();
+    toast(usedCount ? `ক্যাটাগরি মুছে গেছে — ${usedCount}টি ডকুমেন্ট "Others"-এ সরানো হয়েছে` : 'ক্যাটাগরি মুছে গেছে','warning');
+  });
+}
+
+// ──────────────────────────────────────────
+// TASK CATEGORIES (Settings-managed, synced like Project/Document
+// categories — mirrors the exact same pattern)
+// ──────────────────────────────────────────
+function populateTaskCategorySelect() {
+  const sel = document.getElementById('tmCategory');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = CONFIG.taskCategories.map(c => `<option value="${c}">${taskCatIcon(c)} ${c}</option>`).join('');
+  if (prev && CONFIG.taskCategories.includes(prev)) sel.value = prev;
+}
+
+function populateTaskCategoryFilter() {
+  const sel = document.getElementById('taskFilterCat');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">সব ক্যাটাগরি</option>' + CONFIG.taskCategories.map(c => `<option value="${c}">${taskCatIcon(c)} ${c}</option>`).join('');
+  if (prev && CONFIG.taskCategories.includes(prev)) sel.value = prev;
+}
+
+function openManageTaskCategoriesModal() {
+  renderTaskCatManage();
+  openModal('manageTaskCategoriesModal');
+}
+
+function renderTaskCatManage() {
+  const el = document.getElementById('taskCatManage');
+  if (!el) return;
+  el.innerHTML = CONFIG.taskCategories.map((c,i)=>`
+    <div class="manage-chip sortable-chip" draggable="true" data-idx="${i}">
+      <span class="drag-handle" title="টেনে ক্রম বদলান">⠿</span>
+      <span>${taskCatIcon(c)} ${c}</span>
+      <div class="mc-actions">
+        <button class="edit" title="নাম পরিবর্তন" onclick="renameTaskCategory(${i})">✏️</button>
+        <button class="del" title="মুছুন" onclick="removeTaskCategory(${i})">✕</button>
+      </div>
+    </div>`).join('');
+  wireChipDragDrop(el, (from,to) => {
+    reorderArray(CONFIG.taskCategories, from, to);
+    saveConfig(); renderTaskCatManage(); populateTaskCategorySelect(); populateTaskCategoryFilter();
+    pushDataToBackend();
+  });
+}
+
+function renameTaskCategory(i) {
+  const oldName = CONFIG.taskCategories[i];
+  const val = prompt('নতুন নাম দিন:', oldName);
+  if (!val || !val.trim() || val.trim() === oldName) return;
+  const newName = val.trim();
+  CONFIG.taskCategories[i] = newName;
+  APP_DATA.tasks.forEach(t => { if (t.category === oldName) t.category = newName; });
+  saveConfig(); saveData();
+  renderTaskCatManage(); populateTaskCategorySelect(); populateTaskCategoryFilter();
+  if (typeof renderTasks === 'function') renderTasks();
+  pushDataToBackend();
+  toast('ক্যাটাগরির নাম পরিবর্তন হয়েছে!');
+}
+
+function addTaskCategory() {
+  const inputEl = document.getElementById('newTaskCatInput');
+  const val = inputEl.value.trim();
+  if (!val) return;
+  if (!CONFIG.taskCategories.includes(val)) CONFIG.taskCategories.push(val);
+  inputEl.value = '';
+  saveConfig(); renderTaskCatManage(); populateTaskCategorySelect(); populateTaskCategoryFilter();
+  toast('ক্যাটাগরি যোগ হয়েছে!');
+  pushDataToBackend();
+}
+
+function removeTaskCategory(i) {
+  const oldName = CONFIG.taskCategories[i];
+  const fallback = 'Other';
+  if (oldName === fallback) { toast('"Other" ডিফল্ট ফলব্যাক ক্যাটাগরি — এটি মুছা যাবে না','warning'); return; }
+  const usedCount = APP_DATA.tasks.filter(t => t.category===oldName).length;
+  const msg = usedCount
+    ? `"${oldName}" মুছবেন? এই ক্যাটাগরির ${usedCount}টি Task স্বয়ংক্রিয়ভাবে "Other"-এ সরানো হবে।`
+    : `"${oldName}" মুছবেন?`;
+  secureConfirm(msg,()=>{
+    if (usedCount) {
+      if (!CONFIG.taskCategories.includes(fallback)) CONFIG.taskCategories.push(fallback);
+      APP_DATA.tasks.forEach(t => { if (t.category===oldName) t.category = fallback; });
+      saveData();
+    }
+    const idx = CONFIG.taskCategories.indexOf(oldName);
+    if (idx > -1) CONFIG.taskCategories.splice(idx,1);
+    saveConfig(); renderTaskCatManage(); populateTaskCategorySelect(); populateTaskCategoryFilter();
+    if (typeof renderTasks === 'function') renderTasks();
+    pushDataToBackend();
+    toast(usedCount ? `ক্যাটাগরি মুছে গেছে — ${usedCount}টি Task "Other"-এ সরানো হয়েছে` : 'ক্যাটাগরি মুছে গেছে','warning');
   });
 }
 
@@ -6388,9 +6559,27 @@ function addCategory(type) {
   renderCatList(type,type+'CatList'); updateEntryCategories(); toast('ক্যাটাগরি যোগ হয়েছে!');
   pushDataToBackend();
 }
+const CATEGORY_FALLBACK_NAME = 'অন্যান্য';
 function removeCategory(type,i) {
-  CONFIG.categories[type].splice(i,1); saveConfig(); renderCatList(type,type+'CatList'); updateEntryCategories();
-  pushDataToBackend();
+  const oldName = CONFIG.categories[type][i];
+  if (oldName === CATEGORY_FALLBACK_NAME) { toast('"অন্যান্য" ডিফল্ট ফলব্যাক ক্যাটাগরি — এটি মুছা যাবে না','warning'); return; }
+  const usedCount = APP_DATA.entries.filter(e => e.type===type && e.category===oldName).length;
+  const doRemove = () => {
+    if (!CONFIG.categories[type].includes(CATEGORY_FALLBACK_NAME)) CONFIG.categories[type].push(CATEGORY_FALLBACK_NAME);
+    if (usedCount) APP_DATA.entries.forEach(e => { if (e.type===type && e.category===oldName) e.category = CATEGORY_FALLBACK_NAME; });
+    const idx = CONFIG.categories[type].indexOf(oldName);
+    if (idx > -1) CONFIG.categories[type].splice(idx,1);
+    saveConfig(); saveData();
+    renderCatList(type,type+'CatList'); updateEntryCategories(); renderRecentEntries(); renderDashboard();
+    if (typeof renderFinance === 'function' && document.getElementById('tab-finance') && document.getElementById('tab-finance').classList.contains('active')) renderFinance();
+    pushDataToBackend();
+    toast(usedCount ? `ক্যাটাগরি মুছে গেছে — ${usedCount}টি এন্ট্রি "অন্যান্য"-তে সরানো হয়েছে` : 'ক্যাটাগরি মুছে গেছে','warning');
+  };
+  if (usedCount) {
+    secureConfirm(`"${oldName}" মুছবেন? এই ক্যাটাগরির ${usedCount}টি এন্ট্রি স্বয়ংক্রিয়ভাবে "অন্যান্য"-তে সরানো হবে।`, doRemove);
+  } else {
+    doRemove();
+  }
 }
 function renameCategory(type,i) {
   const oldName = CONFIG.categories[type][i];
@@ -6453,7 +6642,8 @@ function buildCategoriesConfigJson() {
     projectCategories:  CONFIG.projectCategories,
     docCategories:       CONFIG.docCategories,
     shoppingLists:       CONFIG.shoppingLists,
-    billCategories:      CONFIG.billCategories
+    billCategories:      CONFIG.billCategories,
+    taskCategories:      CONFIG.taskCategories
   });
 }
 
@@ -6472,6 +6662,7 @@ function applyCategoriesConfigFromBackend(json) {
   if (Array.isArray(parsed.docCategories))     { CONFIG.docCategories     = parsed.docCategories;     changed = true; }
   if (Array.isArray(parsed.shoppingLists))     { CONFIG.shoppingLists     = parsed.shoppingLists;     changed = true; }
   if (Array.isArray(parsed.billCategories) && parsed.billCategories.length) { CONFIG.billCategories = parsed.billCategories; changed = true; }
+  if (Array.isArray(parsed.taskCategories) && parsed.taskCategories.length) { CONFIG.taskCategories = parsed.taskCategories; changed = true; }
   if (!changed) return false;
   ensureBillCategoryFinanceCategories();
   saveConfig();
@@ -6483,6 +6674,10 @@ function applyCategoriesConfigFromBackend(json) {
   if (typeof renderGenericCatManage === 'function') renderGenericCatManage();
   if (typeof renderDocCatManage === 'function') renderDocCatManage();
   if (typeof renderBillCatManage === 'function') renderBillCatManage();
+  if (typeof populateTaskCategorySelect === 'function') populateTaskCategorySelect();
+  if (typeof populateTaskCategoryFilter === 'function') populateTaskCategoryFilter();
+  if (typeof renderTaskCatManage === 'function') renderTaskCatManage();
+  if (typeof renderTasks === 'function') renderTasks();
   return true;
 }
 
